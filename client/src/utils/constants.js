@@ -21,6 +21,8 @@ export const ROUTES = {
     EXERCISES: '/patient/exercises',
     EXERCISE_DETAILS: '/patient/exercises/:exerciseId',
     GUIDED_SESSION: '/patient/exercises/:exerciseId/guided',
+    SESSION_VIEW: '/patient/exercises/:exerciseId/session',
+    PAIN_FEEDBACK: '/patient/exercises/:exerciseId/feedback',
     SESSION_SUMMARY: '/patient/exercises/:exerciseId/summary',
     PROGRESS: '/patient/progress',
   },

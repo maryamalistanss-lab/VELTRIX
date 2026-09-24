@@ -1,36 +1,29 @@
+﻿/* ============================================================
+   VELTRIX GLOBAL INDEX STYLES
+   ============================================================ */
+
+@import './styles/design-tokens.css';
+@import './styles/brand.css';
+@import './styles/components.css';
+
+/* Bridge Legacy CSS Variables to Centralized VELTRIX Design Tokens */
 :root {
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
-  --secondary: #0d9488;
-  --secondary-hover: #0f766e;
-  --secondary-light: #f0fdfa;
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --border-focus: #94a3b8;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --radius: 8px;
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --primary: var(--primary-indigo);
+  --primary-hover: var(--primary-hover);
+  --primary-light: var(--primary-light);
+  --secondary: var(--accent-mint);
+  --secondary-hover: var(--mint-hover);
+  --secondary-light: var(--mint-tint);
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --border: var(--border-color);
+  --border-focus: var(--primary-indigo);
+  --radius: var(--radius-md);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: var(--font-family);
-  background-color: var(--bg);
-  color: var(--text-main);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
+/* Ensure root container fills height */
 #root {
   min-height: 100vh;
   display: flex;
@@ -40,4 +33,8 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+button {
+  font-family: inherit;
 }

@@ -1,286 +1,233 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../../components/Card';
-import { ROUTES } from '../../utils/constants';
+import Modal from '../../components/common/Modal';
+import { clinicalPatientDirectory } from '../../data/therapistMockData';
 
-const PATIENTS_DATA = [
-  {
-    id: 'pt-101',
-    name: 'John Doe',
-    age: 45,
-    gender: 'Male',
-    primaryDiagnosis: 'Post-Op Rotator Cuff Repair (Right Shoulder)',
-    targetJoint: 'Shoulder',
-    status: 'ACTIVE',
-    adherenceRate: 88,
-    activeAssignmentsCount: 3,
-    lastPainScore: 3,
-    lastSessionDate: 'Today, 09:45 AM',
-    phase: 'Phase II: Active-Assisted ROM',
-  },
-  {
-    id: 'pt-102',
-    name: 'Sarah Smith',
-    age: 28,
-    gender: 'Female',
-    primaryDiagnosis: 'ACL Reconstruction Rehab (Left Knee)',
-    targetJoint: 'Knee',
-    status: 'ATTENTION_NEEDED',
-    adherenceRate: 92,
-    activeAssignmentsCount: 4,
-    lastPainScore: 7,
-    lastSessionDate: 'Today, 08:30 AM',
-    phase: 'Phase III: Functional Strengthening',
-  },
-  {
-    id: 'pt-103',
-    name: 'Michael Chen',
-    age: 52,
-    gender: 'Male',
-    primaryDiagnosis: 'Lumbar Spine Disc Herniation & Stabilization',
-    targetJoint: 'Spine',
-    status: 'ATTENTION_NEEDED',
-    adherenceRate: 58,
-    activeAssignmentsCount: 2,
-    lastPainScore: 5,
-    lastSessionDate: '3 days ago',
-    phase: 'Phase I: Core Activation',
-  },
-  {
-    id: 'pt-104',
-    name: 'Emma Watson',
-    age: 34,
-    gender: 'Female',
-    primaryDiagnosis: 'Lateral Ankle Sprain & Chronic Instability',
-    targetJoint: 'Ankle',
-    status: 'ACTIVE',
-    adherenceRate: 96,
-    activeAssignmentsCount: 3,
-    lastPainScore: 1,
-    lastSessionDate: 'Yesterday, 04:15 PM',
-    phase: 'Phase IV: Proprioceptive & Agility',
-  },
-  {
-    id: 'pt-105',
-    name: 'David Miller',
-    age: 61,
-    gender: 'Male',
-    primaryDiagnosis: 'Cervical Spondylosis & Postural Syndrome',
-    targetJoint: 'Spine',
-    status: 'ACTIVE',
-    adherenceRate: 75,
-    activeAssignmentsCount: 2,
-    lastPainScore: 4,
-    lastSessionDate: 'Yesterday, 02:00 PM',
-    phase: 'Phase II: Postural Correction',
-  },
-  {
-    id: 'pt-106',
-    name: 'Elena Rostova',
-    age: 39,
-    gender: 'Female',
-    primaryDiagnosis: 'Total Hip Arthroplasty (Right Hip Post-Op)',
-    targetJoint: 'Hip',
-    status: 'ACTIVE',
-    adherenceRate: 84,
-    activeAssignmentsCount: 3,
-    lastPainScore: 2,
-    lastSessionDate: '2 days ago',
-    phase: 'Phase II: Gait & Weight-Bearing',
-  },
-];
-
+/**
+ * TherapistPatients Component
+ * Replicates Screen 3 of Therapist App in Image 1 & 2 (Patient List).
+ */
 export default function TherapistPatients() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [jointFilter, setJointFilter] = useState('ALL');
-  const [sortBy, setSortBy] = useState('NAME');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false);
+  const [newPatientName, setNewPatientName] = useState('');
+  const [newPatientCondition, setNewPatientCondition] = useState('Knee Recovery');
+
+  const patients = clinicalPatientDirectory;
 
   const filteredPatients = useMemo(() => {
-    return PATIENTS_DATA.filter((p) => {
-      const matchesSearch =
+    return patients.filter((p) => {
+      const match =
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.primaryDiagnosis.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
-      const matchesJoint = jointFilter === 'ALL' || p.targetJoint === jointFilter;
-      return matchesSearch && matchesStatus && matchesJoint;
-    }).sort((a, b) => {
-      if (sortBy === 'NAME') return a.name.localeCompare(b.name);
-      if (sortBy === 'ADHERENCE') return b.adherenceRate - a.adherenceRate;
-      if (sortBy === 'PAIN') return (b.lastPainScore || 0) - (a.lastPainScore || 0);
-      return 0;
+        p.condition.toLowerCase().includes(searchTerm.toLowerCase());
+      return match;
     });
-  }, [searchTerm, statusFilter, jointFilter, sortBy]);
+  }, [patients, searchTerm]);
 
   return (
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header-row">
+    <div className="page-container therapist-patients-page">
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: 24 }}>
         <div>
-          <h1 className="page-title">Patient Management Directory</h1>
+          <h1 className="page-title">Patients</h1>
           <p className="page-subtitle">
-            Clinical caseload monitoring, protocol assignments, and rehabilitation progress.
+            Assigned clinical cohort &bull; Monitoring and protocol compliance
           </p>
         </div>
-        <div className="header-actions">
-          <Link to={ROUTES.THERAPIST.ASSIGN} className="btn btn-primary">
-            + Prescribe Exercise Plan
-          </Link>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => setIsAddPatientModalOpen(true)}
+            className="btn btn-primary"
+          >
+            + Add Patient
+          </button>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="filter-panel">
-        <div className="search-box">
-          <span className="search-icon">🔍</span>
+      <Card>
+        {/* Search Bar */}
+        <div style={{ marginBottom: 20 }}>
+          <div className="topbar-search-wrapper" style={{ width: '100%', maxWidth: 360 }}>
+            <span className="topbar-search-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input
+              type="text"
+              placeholder="Search patients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="topbar-search-input"
+            />
+          </div>
+        </div>
+
+        {/* Patients Table matching Image 1 & 2 Screen 3 */}
+        <div className="table-responsive">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Age</th>
+                <th>Condition</th>
+                <th>Completion</th>
+                <th>Last Active</th>
+                <th style={{ textAlign: 'right' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPatients.map((patient) => (
+                <tr key={patient.id}>
+                  {/* Patient Name with Avatar */}
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div className="avatar avatar-sm">
+                        <span>{patient.name[0]}</span>
+                      </div>
+                      <Link
+                        to={`/therapist/patients/${patient.id}/progress`}
+                        style={{ fontWeight: 600, color: 'var(--text-primary)' }}
+                      >
+                        {patient.name}
+                      </Link>
+                    </div>
+                  </td>
+
+                  <td>{patient.age}</td>
+                  <td>{patient.condition}</td>
+
+                  {/* Completion with bar */}
+                  <td style={{ minWidth: 160 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div className="progress-bar-track" style={{ flex: 1 }}>
+                        <div
+                          className="progress-bar-fill progress-bar-fill-mint"
+                          style={{ width: `${patient.completionRate}%` }}
+                        />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {patient.completionRate}%
+                      </span>
+                    </div>
+                  </td>
+
+                  <td style={{ color: 'var(--text-secondary)' }}>{patient.lastActive}</td>
+
+                  {/* Actions */}
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'inline-flex', gap: 8 }}>
+                      <Link
+                        to={`/therapist/patients/${patient.id}/progress`}
+                        className="btn btn-outline btn-sm"
+                      >
+                        View
+                      </Link>
+                      <Link
+                        to={`/therapist/patients/${patient.id}/assign`}
+                        className="btn btn-primary btn-sm"
+                      >
+                        Assign
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingTop: 16,
+            marginTop: 8,
+            fontSize: 13,
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <span>Showing 1 to {filteredPatients.length} of 12 patients</span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(1)}
+              className={`btn btn-sm ${currentPage === 1 ? 'btn-primary' : 'btn-outline'}`}
+              style={{ minWidth: 32 }}
+            >
+              1
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(2)}
+              className={`btn btn-sm ${currentPage === 2 ? 'btn-primary' : 'btn-outline'}`}
+              style={{ minWidth: 32 }}
+            >
+              2
+            </button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Add Patient Modal */}
+      <Modal
+        isOpen={isAddPatientModalOpen}
+        onClose={() => setIsAddPatientModalOpen(false)}
+        title="Add New Rehabilitation Patient"
+        footer={
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setIsAddPatientModalOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                setIsAddPatientModalOpen(false);
+              }}
+            >
+              Add Patient
+            </button>
+          </div>
+        }
+      >
+        <div className="form-group">
+          <label className="form-label">Full Name:</label>
           <input
             type="text"
-            placeholder="Search by patient name or diagnosis..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="form-input search-input"
+            className="form-input"
+            placeholder="e.g. Maya Lin"
+            value={newPatientName}
+            onChange={(e) => setNewPatientName(e.target.value)}
           />
         </div>
 
-        <div className="filter-group">
+        <div className="form-group">
+          <label className="form-label">Condition / Primary Joint:</label>
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
             className="form-select"
+            value={newPatientCondition}
+            onChange={(e) => setNewPatientCondition(e.target.value)}
           >
-            <option value="ALL">All Clinical Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="ATTENTION_NEEDED">Attention Needed</option>
-          </select>
-
-          <select
-            value={jointFilter}
-            onChange={(e) => setJointFilter(e.target.value)}
-            className="form-select"
-          >
-            <option value="ALL">All Target Joints</option>
-            <option value="Knee">Knee</option>
-            <option value="Shoulder">Shoulder</option>
-            <option value="Spine">Spine</option>
-            <option value="Ankle">Ankle</option>
-            <option value="Hip">Hip</option>
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="form-select"
-          >
-            <option value="NAME">Sort by Name (A-Z)</option>
-            <option value="ADHERENCE">Sort by Adherence (High-Low)</option>
-            <option value="PAIN">Sort by Pain Score (High-Low)</option>
+            <option value="Knee Recovery">Knee Recovery</option>
+            <option value="Shoulder Pain">Shoulder Pain</option>
+            <option value="Post-Op ACL">Post-Op ACL</option>
+            <option value="Lumbar Spine">Lumbar Spine</option>
+            <option value="Cervical Spine">Cervical Spine</option>
           </select>
         </div>
-      </div>
-
-      {/* Patient Count Summary */}
-      <div className="results-count-bar">
-        <span>Showing {filteredPatients.length} of {PATIENTS_DATA.length} assigned patients</span>
-      </div>
-
-      {/* Patient Cards Grid */}
-      <div className="card-grid">
-        {filteredPatients.map((patient) => (
-          <Card
-            key={patient.id}
-            title={patient.name}
-            subtitle={`${patient.age} yrs • ${patient.gender} • ${patient.targetJoint}`}
-            className="patient-summary-card"
-          >
-            <div className="patient-card-details">
-              <div className="detail-row">
-                <span className="detail-label">Diagnosis:</span>
-                <span className="detail-val font-medium">{patient.primaryDiagnosis}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Care Phase:</span>
-                <span className="detail-val text-secondary font-medium">{patient.phase}</span>
-              </div>
-
-              {/* Adherence Progress Bar */}
-              <div className="adherence-section">
-                <div className="adherence-header">
-                  <span className="detail-label">Adherence Rate:</span>
-                  <span className="font-bold">{patient.adherenceRate}%</span>
-                </div>
-                <div className="progress-bar-bg">
-                  <div
-                    className={`progress-bar-fill ${patient.adherenceRate >= 80 ? 'fill-green' : patient.adherenceRate >= 60 ? 'fill-yellow' : 'fill-red'}`}
-                    style={{ width: `${patient.adherenceRate}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="metrics-pill-row">
-                <span className={`badge ${patient.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}>
-                  {patient.status === 'ACTIVE' ? 'Active Case' : 'Attention Needed'}
-                </span>
-                <span className={`pain-badge pain-${patient.lastPainScore <= 3 ? 'low' : patient.lastPainScore <= 6 ? 'med' : 'high'}`}>
-                  Pain: {patient.lastPainScore}/10
-                </span>
-                <span className="badge badge-info">
-                  {patient.activeAssignmentsCount} Prescribed Exercises
-                </span>
-              </div>
-
-              <div className="last-active-text">
-                Last synchronized session: <strong>{patient.lastSessionDate}</strong>
-              </div>
-            </div>
-
-            {/* Quick Action Buttons */}
-            <div className="card-actions flex-wrap">
-              <Link
-                to={`/therapist/patients/${patient.id}`}
-                className="btn btn-outline btn-sm"
-              >
-                Profile & Details
-              </Link>
-              <Link
-                to={`/therapist/patients/${patient.id}/assign`}
-                className="btn btn-secondary btn-sm"
-              >
-                Assign Exercise
-              </Link>
-              <Link
-                to={`/therapist/patients/${patient.id}/progress`}
-                className="btn btn-primary btn-sm"
-              >
-                Progress & Telemetry
-              </Link>
-              <Link
-                to={`/therapist/patients/${patient.id}/notes`}
-                className="btn btn-outline btn-sm"
-              >
-                Clinical Notes
-              </Link>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {filteredPatients.length === 0 && (
-        <div className="empty-state-card">
-          <div className="empty-icon">🔎</div>
-          <h3>No patients matching filters</h3>
-          <p>Try resetting the search terms or body region filters.</p>
-          <button
-            className="btn btn-outline"
-            onClick={() => {
-              setSearchTerm('');
-              setStatusFilter('ALL');
-              setJointFilter('ALL');
-            }}
-          >
-            Clear Filters
-          </button>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

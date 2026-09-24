@@ -1,29 +1,50 @@
+﻿import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { ROUTES } from '../utils/constants';
+import TherapistSidebar from '../components/navigation/TherapistSidebar';
+import TopBar from '../components/navigation/TopBar';
+import MobileNavigation from '../components/navigation/MobileNavigation';
 
+/**
+ * TherapistLayout
+ * Unified clinical workspace shell with desktop sidebar, topbar, and mobile navigation.
+ */
 export default function TherapistLayout() {
-  const therapistNavLinks = [
-    { to: ROUTES.THERAPIST.DASHBOARD, label: 'Dashboard' },
-    { to: ROUTES.THERAPIST.PATIENTS, label: 'Patients' },
-    { to: ROUTES.THERAPIST.EXERCISES, label: 'Exercise Library' },
-    { to: ROUTES.THERAPIST.ASSIGN, label: 'Prescribe Plan' },
-    { to: ROUTES.THERAPIST.SESSIONS, label: 'Clinical Sessions' },
-  ];
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="layout-wrapper therapist-theme">
-      <Navbar
-        title="VELTRIX"
-        portalName="Therapist Portal"
-        links={therapistNavLinks}
+    <div className="veltrix-app-shell therapist-portal-shell">
+      {/* Desktop Sidebar (and mobile drawer) */}
+      <TherapistSidebar
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
       />
-      <main className="layout-content">
-        <Outlet />
-      </main>
-      <footer className="layout-footer">
-        <p>VELTRIX &bull; Vitality + Elevation + Tracking + IX &bull; Clinical Therapist Portal</p>
-      </footer>
+
+      {/* Main Clinical Area */}
+      <div className="veltrix-main-area">
+        {/* Mobile Header */}
+        <MobileNavigation
+          onToggleSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+        />
+
+        {/* Desktop TopBar */}
+        <TopBar
+          onToggleMobileMenu={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+        />
+
+        {/* Dynamic Nested Content */}
+        <main className="layout-content-area" role="main">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Backdrop for mobile drawer */}
+      {mobileSidebarOpen && (
+        <div
+          className="modal-backdrop"
+          style={{ zIndex: 35 }}
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 }

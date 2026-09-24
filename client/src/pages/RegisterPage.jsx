@@ -1,9 +1,15 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import VeltrixBrand from '../components/brand/VeltrixBrand';
+import ThemeToggle from '../components/common/ThemeToggle';
 import Card from '../components/Card';
 import { useAuth } from '../hooks/useAuth';
 import { ROUTES } from '../utils/constants';
 
+/**
+ * RegisterPage Component
+ * Self-registration for Patient Portal with unified VELTRIX brand styling.
+ */
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -17,7 +23,6 @@ export default function RegisterPage() {
   const { register, isAuthenticated, role, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
 
-  // If already authenticated, redirect to appropriate dashboard
   useEffect(() => {
     if (isAuthenticated) {
       if (role === 'THERAPIST') {
@@ -29,25 +34,13 @@ export default function RegisterPage() {
   }, [isAuthenticated, role, navigate]);
 
   const validateForm = () => {
-    if (!name.trim()) {
-      return 'Please enter your full name.';
-    }
-    if (!email.trim()) {
-      return 'Please enter your email address.';
-    }
+    if (!name.trim()) return 'Please enter your full name.';
+    if (!email.trim()) return 'Please enter your email address.';
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      return 'Please enter a valid email address format.';
-    }
-    if (!password) {
-      return 'Please enter a password.';
-    }
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long.';
-    }
-    if (password !== confirmPassword) {
-      return 'Passwords do not match. Please re-enter.';
-    }
+    if (!emailRegex.test(email.trim())) return 'Please enter a valid email address.';
+    if (!password) return 'Please enter a password.';
+    if (password.length < 8) return 'Password must be at least 8 characters.';
+    if (password !== confirmPassword) return 'Passwords do not match.';
     return null;
   };
 
@@ -64,7 +57,6 @@ export default function RegisterPage() {
     }
 
     setIsSubmitting(true);
-    // Explicitly enforce role as PATIENT — no silent role mutation
     const result = await register(name, email, password, 'PATIENT');
     setIsSubmitting(false);
 
@@ -72,7 +64,7 @@ export default function RegisterPage() {
       setSuccessMessage('Registration successful! Redirecting to sign in...');
       setTimeout(() => {
         navigate(ROUTES.LOGIN, {
-          state: { registeredEmail: email.trim(), message: 'Account created successfully! Please sign in.' },
+          state: { registeredEmail: email.trim(), message: 'Account created! Please sign in.' },
         });
       }, 1500);
     } else {
@@ -83,95 +75,135 @@ export default function RegisterPage() {
   const displayedError = formError || authError;
 
   return (
-    <div className="login-container">
-      <div className="login-card-wrapper">
-        <div className="login-header">
-          <h1 className="brand-title">VELTRIX</h1>
-          <p className="brand-subtitle">
-            Vitality &bull; Elevation &bull; Tracking &bull; Intelligent Experience
-          </p>
-          <p className="app-desc">Patient Portal Self-Registration</p>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 16px',
+        background: 'var(--color-bg)',
+        position: 'relative',
+      }}
+    >
+      <div style={{ position: 'absolute', top: 20, right: 20 }}>
+        <ThemeToggle />
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ marginBottom: 28 }}>
+          <VeltrixBrand variant="full" size="lg" portalBadge="Patient Self-Registration" />
         </div>
 
-        <Card title="Create Patient Account" subtitle="Register to begin your personalized rehabilitation program">
+        <Card style={{ width: '100%', padding: 32, boxShadow: 'var(--shadow-elevated)' }}>
+          {/* Tab Switcher */}
+          <div
+            style={{
+              display: 'flex',
+              background: 'var(--color-surface-elevated)',
+              borderRadius: 'var(--radius-md)',
+              padding: 4,
+              marginBottom: 24,
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate(ROUTES.LOGIN)}
+              className="btn btn-block btn-sm btn-ghost"
+              style={{ borderRadius: 'var(--radius-sm)', fontWeight: 600 }}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              className="btn btn-block btn-sm btn-primary"
+              style={{ borderRadius: 'var(--radius-sm)', fontWeight: 600 }}
+            >
+              Register
+            </button>
+          </div>
+
           {displayedError && (
-            <div className="alert-banner alert-danger" role="alert">
-              <span>⚠️ {displayedError}</span>
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-error-bg)',
+                border: '1px solid var(--color-error-border)',
+                color: 'var(--color-error)',
+                fontSize: 13,
+                marginBottom: 20,
+              }}
+              role="alert"
+            >
+              ⚠️ {displayedError}
             </div>
           )}
 
           {successMessage && (
-            <div className="alert-banner alert-success" role="alert">
-              <span>✅ {successMessage}</span>
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-success-bg)',
+                border: '1px solid var(--color-success-border)',
+                color: 'var(--accent-mint)',
+                fontSize: 13,
+                marginBottom: 20,
+              }}
+              role="alert"
+            >
+              ✅ {successMessage}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="login-form">
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label" htmlFor="name-input">
-                Full Name:
-              </label>
+              <label className="form-label">Full Name</label>
               <input
-                id="name-input"
                 type="text"
                 placeholder="e.g. Jane Patient"
                 value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (formError) setFormError(null);
-                }}
+                onChange={(e) => setName(e.target.value)}
                 className="form-input"
-                autoComplete="name"
                 required
                 disabled={isSubmitting}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="email-input">
-                Email Address:
-              </label>
+              <label className="form-label">Email Address</label>
               <input
-                id="email-input"
                 type="email"
                 placeholder="jane.patient@example.com"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (formError) setFormError(null);
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 className="form-input"
-                autoComplete="email"
                 required
                 disabled={isSubmitting}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="password-input">
-                Password (minimum 8 characters):
-              </label>
-              <div className="password-input-wrapper">
+              <label className="form-label">Password (min 8 chars)</label>
+              <div style={{ position: 'relative' }}>
                 <input
-                  id="password-input"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Create a secure password"
+                  placeholder="Create secure password"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (formError) setFormError(null);
-                  }}
-                  className="form-input password-input"
-                  autoComplete="new-password"
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="form-input"
                   required
                   disabled={isSubmitting}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="password-toggle-btn"
+                  className="btn btn-ghost btn-icon-only"
+                  style={{ position: 'absolute', right: 4, top: 4, height: 32, width: 32 }}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  tabIndex={-1}
                 >
                   {showPassword ? '🙈' : '👁️'}
                 </button>
@@ -179,61 +211,35 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="confirm-password-input">
-                Confirm Password:
-              </label>
+              <label className="form-label">Confirm Password</label>
               <input
-                id="confirm-password-input"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Re-enter your password"
+                placeholder="Re-enter password"
                 value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (formError) setFormError(null);
-                }}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="form-input"
-                autoComplete="new-password"
                 required
                 disabled={isSubmitting}
               />
             </div>
 
-            <div className="form-group">
-              <span className="field-hint">
-                Account role: <strong className="text-primary">PATIENT</strong> (Standard rehabilitation account)
-              </span>
-            </div>
-
-            <div className="form-actions" style={{ marginTop: '1.25rem' }}>
-              <button
-                type="submit"
-                className="btn btn-primary btn-block"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <span className="btn-loading-text">
-                    <span className="btn-spinner"></span> Creating Account...
-                  </span>
-                ) : (
-                  'Complete Registration'
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn btn-primary btn-block btn-lg"
+              style={{ marginTop: 12 }}
+            >
+              {isSubmitting ? 'Creating Account...' : 'Complete Registration'}
+            </button>
           </form>
 
-          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-            <p className="placeholder-text">
-              Already have an account?{' '}
-              <Link to={ROUTES.LOGIN} className="table-link font-bold">
-                Sign in here
-              </Link>
-            </p>
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
+            <span>Already have an account? </span>
+            <Link to={ROUTES.LOGIN} style={{ fontWeight: 600, color: 'var(--primary-indigo)' }}>
+              Sign in
+            </Link>
           </div>
         </Card>
-
-        <p className="foundation-note">
-          🔒 Secure HIPAA-compliant session encryption. Patient rehabilitation workspace.
-        </p>
       </div>
     </div>
   );

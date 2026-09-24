@@ -1,356 +1,265 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Card from '../../components/Card';
-import { ROUTES } from '../../utils/constants';
+import Badge from '../../components/common/Badge';
+import { exerciseCatalog } from '../../data/exerciseMockData';
+import { clinicalPatientDirectory } from '../../data/therapistMockData';
 
-const AVAILABLE_EXERCISES = [
-  {
-    id: 'ex-101',
-    name: 'Seated Knee Extension with Quad Hold',
-    category: 'Lower Body',
-    targetJoint: 'Knee',
-    defaultSets: 3,
-    defaultReps: 10,
-    defaultHoldSeconds: 5,
-    defaultFrequency: '2x daily',
-    targetAngle: '0° - 90°',
-  },
-  {
-    id: 'ex-102',
-    name: 'Shoulder Pendulum & Active-Assisted Circumduction',
-    category: 'Upper Body',
-    targetJoint: 'Shoulder',
-    defaultSets: 3,
-    defaultReps: 15,
-    defaultHoldSeconds: 0,
-    defaultFrequency: '2x daily',
-    targetAngle: '0° - 45°',
-  },
-  {
-    id: 'ex-103',
-    name: 'Assisted Shoulder External Rotation with Towel',
-    category: 'Upper Body',
-    targetJoint: 'Shoulder',
-    defaultSets: 3,
-    defaultReps: 10,
-    defaultHoldSeconds: 5,
-    defaultFrequency: '1x daily',
-    targetAngle: '0° - 30°',
-  },
-  {
-    id: 'ex-104',
-    name: 'Prone Pelvic Tilt & Lumbar Spine Stabilization',
-    category: 'Spine / Core',
-    targetJoint: 'Spine',
-    defaultSets: 3,
-    defaultReps: 12,
-    defaultHoldSeconds: 8,
-    defaultFrequency: '1x daily',
-    targetAngle: 'Neutral',
-  },
-  {
-    id: 'ex-105',
-    name: 'Ankle Dorsiflexion with Resistance Band',
-    category: 'Lower Body',
-    targetJoint: 'Ankle',
-    defaultSets: 3,
-    defaultReps: 15,
-    defaultHoldSeconds: 3,
-    defaultFrequency: '2x daily',
-    targetAngle: '0° - 20°',
-  },
-];
-
-const PATIENTS = [
-  { id: 'pt-101', name: 'John Doe (Post-Op Rotator Cuff Repair - Shoulder)' },
-  { id: 'pt-102', name: 'Sarah Smith (ACL Reconstruction Rehab - Knee)' },
-  { id: 'pt-103', name: 'Michael Chen (Lumbar Spine Disc Herniation - Spine)' },
-  { id: 'pt-104', name: 'Emma Watson (Lateral Ankle Sprain - Ankle)' },
-];
-
+/**
+ * TherapistAssignExercise Component
+ * Replicates Screen 5 of Therapist App in Image 1 & 2.
+ */
 export default function TherapistAssignExercise() {
   const { patientId } = useParams();
   const navigate = useNavigate();
 
+  const patients = clinicalPatientDirectory;
+  const exercises = exerciseCatalog;
+
   const [selectedPatientId, setSelectedPatientId] = useState(patientId || 'pt-101');
-  const [selectedExerciseId, setSelectedExerciseId] = useState('ex-101');
+  const [selectedExerciseId, setSelectedExerciseId] = useState('ex-arm-raise');
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(10);
-  const [holdDuration, setHoldDuration] = useState(5);
-  const [frequency, setFrequency] = useState('2x daily');
-  const [targetRom, setTargetRom] = useState('0° - 90°');
-  const [restSeconds, setRestSeconds] = useState(30);
-  const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  const [therapistNotes, setTherapistNotes] = useState(
-    'Keep back straight. Ensure smooth controlled movement with no sudden jerking.'
-  );
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [frequency, setFrequency] = useState('Daily');
+  const [startDate, setStartDate] = useState('2024-05-24');
+  const [endDate, setEndDate] = useState('2024-05-31');
+  const [notes, setNotes] = useState('Perform slowly and maintain posture. Report any pain.');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const currentExercise =
-    AVAILABLE_EXERCISES.find((ex) => ex.id === selectedExerciseId) || AVAILABLE_EXERCISES[0];
-  const currentPatient = PATIENTS.find((p) => p.id === selectedPatientId) || PATIENTS[0];
-
-  const handleExerciseChange = (e) => {
-    const exId = e.target.value;
-    setSelectedExerciseId(exId);
-    const chosen = AVAILABLE_EXERCISES.find((ex) => ex.id === exId);
-    if (chosen) {
-      setSets(chosen.defaultSets);
-      setReps(chosen.defaultReps);
-      setHoldDuration(chosen.defaultHoldSeconds);
-      setFrequency(chosen.defaultFrequency);
-      setTargetRom(chosen.targetAngle);
-    }
-  };
-
-  const toggleDay = (day) => {
-    if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter((d) => d !== day));
-    } else {
-      setSelectedDays([...selectedDays, day]);
-    }
-  };
+    exercises.find((ex) => ex.id === selectedExerciseId) || exercises[0];
+  const currentPatient =
+    patients.find((p) => p.id === selectedPatientId) || patients[0];
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    setIsSuccess(true);
     setTimeout(() => {
       navigate(`/therapist/patients/${selectedPatientId}/progress`);
     }, 1200);
   };
 
-  const daysList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
   return (
-    <div className="page-container">
-      {/* Breadcrumb */}
-      <div className="breadcrumb-bar">
-        <Link to={ROUTES.THERAPIST.PATIENTS} className="breadcrumb-link">
-          &larr; Patients Directory
-        </Link>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">Prescribe & Assign Exercise</span>
+    <div className="page-container therapist-assign-page">
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: 20 }}>
+        <div>
+          <h1 className="page-title">Assign Exercise</h1>
+          <p className="page-subtitle">
+            Prescribe targeted rehabilitation exercises and customize cadence
+          </p>
+        </div>
       </div>
 
-      <div className="page-header">
-        <h1 className="page-title">Exercise Prescription Engine</h1>
-        <p className="page-subtitle">
-          Configure clinical exercise dosage, range of motion targets, and custom rehabilitation instructions.
-        </p>
-      </div>
-
-      {isSubmitted && (
-        <div className="alert-banner alert-success">
-          ✅ <strong>Prescription Assigned!</strong> Exercise regimen configured for {currentPatient.name}. Redirecting to Patient Progress...
+      {isSuccess && (
+        <div
+          style={{
+            padding: '14px 18px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-success-bg)',
+            color: 'var(--accent-mint)',
+            border: '1px solid var(--color-success-border)',
+            marginBottom: 20,
+            fontWeight: 600,
+          }}
+        >
+          ✓ Exercise successfully assigned to {currentPatient.name}! Redirecting...
         </div>
       )}
 
+      {/* 2-Column Layout matching Image 1 & 2 Screen 5 */}
       <form onSubmit={handleSubmit}>
-        <div className="prescription-layout-grid">
-          {/* Main Parameters Configuration Form */}
-          <div className="prescription-form-column">
-            {/* Step 1: Patient Selection */}
-            <Card title="1. Select Patient Context" subtitle="Target recipient for this rehabilitation protocol">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
+            gap: 24,
+          }}
+          className="dashboard-columns-grid"
+        >
+          {/* Left Column: Form Fields */}
+          <Card title="Prescription Parameters">
+            {/* Select Patient */}
+            <div className="form-group">
+              <label className="form-label">Select Patient:</label>
+              <select
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                className="form-select"
+              >
+                {patients.map((pt) => (
+                  <option key={pt.id} value={pt.id}>
+                    {pt.name} ({pt.condition})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Select Exercise */}
+            <div className="form-group">
+              <label className="form-label">Select Exercise:</label>
+              <select
+                value={selectedExerciseId}
+                onChange={(e) => setSelectedExerciseId(e.target.value)}
+                className="form-select"
+              >
+                {exercises.map((ex) => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.title} ({ex.bodyPart})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sets & Repetitions */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="form-group">
-                <label className="form-label">Assigned Patient:</label>
-                <select
-                  value={selectedPatientId}
-                  onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="form-select"
-                >
-                  {PATIENTS.map((pt) => (
-                    <option key={pt.id} value={pt.id}>
-                      {pt.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="form-label">Sets:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={sets}
+                  onChange={(e) => setSets(Number(e.target.value))}
+                  className="form-input"
+                  required
+                />
               </div>
-            </Card>
 
-            {/* Step 2: Exercise Selection */}
-            <Card title="2. Choose Rehabilitation Exercise" subtitle="Select from VELTRIX Clinical Catalog">
               <div className="form-group">
-                <label className="form-label">Exercise Title:</label>
-                <select
-                  value={selectedExerciseId}
-                  onChange={handleExerciseChange}
-                  className="form-select"
-                >
-                  {AVAILABLE_EXERCISES.map((ex) => (
-                    <option key={ex.id} value={ex.id}>
-                      {ex.name} ({ex.targetJoint} &bull; {ex.category})
-                    </option>
-                  ))}
-                </select>
+                <label className="form-label">Repetitions:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={reps}
+                  onChange={(e) => setReps(Number(e.target.value))}
+                  className="form-input"
+                  required
+                />
               </div>
-            </Card>
+            </div>
 
-            {/* Step 3: Prescription Parameters */}
-            <Card title="3. Configure Clinical Dosage Parameters" subtitle="Specify sets, repetitions, hold duration, and schedule">
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label className="form-label">Target Sets:</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={sets}
-                    onChange={(e) => setSets(Number(e.target.value))}
-                    className="form-input"
-                    required
-                  />
-                </div>
+            {/* Frequency */}
+            <div className="form-group">
+              <label className="form-label">Frequency:</label>
+              <select
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                className="form-select"
+              >
+                <option value="Daily">Daily</option>
+                <option value="2x Daily">2x Daily (Morning / Evening)</option>
+                <option value="3x Weekly">3x Weekly</option>
+                <option value="Every other day">Every other day</option>
+              </select>
+            </div>
 
-                <div className="form-group">
-                  <label className="form-label">Reps per Set:</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={reps}
-                    onChange={(e) => setReps(Number(e.target.value))}
-                    className="form-input"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Hold Duration (Seconds):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={holdDuration}
-                    onChange={(e) => setHoldDuration(Number(e.target.value))}
-                    className="form-input"
-                  />
-                  <span className="field-hint">Use 0 for continuous fluid repetitions</span>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Daily Frequency:</label>
-                  <select
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="1x daily">1x daily</option>
-                    <option value="2x daily">2x daily (Morning & Evening)</option>
-                    <option value="3x daily">3x daily</option>
-                    <option value="Every other day">Every other day</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Target Range of Motion (ROM):</label>
-                  <input
-                    type="text"
-                    value={targetRom}
-                    onChange={(e) => setTargetRom(e.target.value)}
-                    className="form-input"
-                    placeholder="e.g. 0° - 90°"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Rest Between Sets (Seconds):</label>
-                  <input
-                    type="number"
-                    min="10"
-                    max="180"
-                    value={restSeconds}
-                    onChange={(e) => setRestSeconds(Number(e.target.value))}
-                    className="form-input"
-                  />
-                </div>
+            {/* Start Date & End Date */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Start Date:</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="form-input"
+                />
               </div>
 
-              {/* Schedule Days Picker */}
-              <div className="form-group" style={{ marginTop: '1rem' }}>
-                <label className="form-label">Scheduled Days of Week:</label>
-                <div className="day-pills-row">
-                  {daysList.map((day) => {
-                    const isSelected = selectedDays.includes(day);
-                    return (
-                      <button
-                        type="button"
-                        key={day}
-                        onClick={() => toggleDay(day)}
-                        className={`day-pill ${isSelected ? 'day-pill-active' : ''}`}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="form-group">
+                <label className="form-label">End Date (Optional):</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            {/* Notes (Optional) */}
+            <div className="form-group">
+              <label className="form-label">Notes (Optional):</label>
+              <textarea
+                rows="3"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="form-textarea"
+                placeholder="Perform slowly and maintain posture. Report any pain."
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div style={{ marginTop: 24 }}>
+              <button type="submit" className="btn btn-primary btn-block btn-lg">
+                Assign Exercise &rarr;
+              </button>
+            </div>
+          </Card>
+
+          {/* Right Column: Exercise Preview */}
+          <Card title="Exercise Preview" subtitle={currentExercise.title}>
+            {/* Visual Guide Graphic */}
+            <div
+              style={{
+                width: '100%',
+                height: 180,
+                borderRadius: 'var(--radius-md)',
+                background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 20,
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              <span style={{ fontSize: 56, marginBottom: 6 }}>🏃‍♂️</span>
+              <strong style={{ color: 'var(--primary-indigo)', fontSize: 15 }}>
+                {currentExercise.title}
+              </strong>
+            </div>
+
+            {/* Preview Specs List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Body Part:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{currentExercise.bodyPart}</strong>
               </div>
 
-              {/* Therapist Guidance Cues */}
-              <div className="form-group" style={{ marginTop: '1rem' }}>
-                <label className="form-label">Therapist Clinical Instructions & Form Cues:</label>
-                <textarea
-                  rows="3"
-                  value={therapistNotes}
-                  onChange={(e) => setTherapistNotes(e.target.value)}
-                  className="form-textarea"
-                  placeholder="Enter specific verbal cues, posture cautions, or pain limits..."
-                ></textarea>
-              </div>
-            </Card>
-          </div>
-
-          {/* Live Prescription Preview Sidebar */}
-          <div className="prescription-preview-column">
-            <Card title="Prescription Summary Preview" subtitle="Live clinical dosage verification">
-              <div className="preview-summary-box">
-                <div className="preview-item">
-                  <span className="preview-label">Patient:</span>
-                  <span className="preview-value font-bold">{currentPatient.name.split('(')[0]}</span>
-                </div>
-                <div className="preview-item">
-                  <span className="preview-label">Exercise:</span>
-                  <span className="preview-value font-bold text-primary">{currentExercise.name}</span>
-                </div>
-                <div className="preview-item">
-                  <span className="preview-label">Target Dosage:</span>
-                  <span className="preview-value font-medium">{sets} Sets × {reps} Reps ({holdDuration}s hold)</span>
-                </div>
-                <div className="preview-item">
-                  <span className="preview-label">Daily Frequency:</span>
-                  <span className="preview-value">{frequency}</span>
-                </div>
-                <div className="preview-item">
-                  <span className="preview-label">Target Angle:</span>
-                  <span className="preview-value">{targetRom}</span>
-                </div>
-                <div className="preview-item">
-                  <span className="preview-label">Active Days:</span>
-                  <span className="preview-value">{selectedDays.join(', ')}</span>
-                </div>
-                <div className="preview-item">
-                  <span className="preview-label">Estimated Routine Duration:</span>
-                  <span className="preview-value">~{Math.round((sets * reps * (holdDuration + 3) + (sets - 1) * restSeconds) / 60)} minutes / session</span>
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Difficulty:</span>
+                <Badge variant={currentExercise.difficulty === 'Beginner' ? 'mint' : 'warning'}>
+                  {currentExercise.difficulty}
+                </Badge>
               </div>
 
-              <div className="preview-cues-box">
-                <span className="preview-label">Clinical Form Cues:</span>
-                <p className="preview-cues-text">"{therapistNotes}"</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Default Sets:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{currentExercise.sets}</strong>
               </div>
 
-              <div className="prescription-actions">
-                <button type="submit" className="btn btn-primary btn-block">
-                  Prescribe & Assign Exercise &rarr;
-                </button>
-                <Link
-                  to={ROUTES.THERAPIST.PATIENTS}
-                  className="btn btn-outline btn-block"
-                >
-                  Cancel
-                </Link>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Equipment:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{currentExercise.equipment || 'None'}</strong>
               </div>
-            </Card>
-          </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 20,
+                padding: 14,
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-surface-elevated)',
+                fontSize: 12,
+                color: 'var(--text-secondary)',
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>Description:</strong> {currentExercise.description}
+            </div>
+          </Card>
         </div>
       </form>
     </div>

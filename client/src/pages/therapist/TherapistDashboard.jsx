@@ -1,239 +1,232 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import Card from '../../components/Card';
+import StatCard from '../../components/common/StatCard';
+import SimpleLineChart from '../../components/common/SimpleLineChart';
+import {
+  currentClinicianProfile,
+  therapistDashboardMetrics,
+  recentActivities,
+  sessionsOverviewWeekly,
+  topPerformingPatients,
+  todaysPendingAlerts,
+} from '../../data/therapistMockData';
 import { ROUTES } from '../../utils/constants';
-import { useAuth } from '../../hooks/useAuth';
 
+/**
+ * TherapistDashboard Component
+ * Replicates Screen 2 of Therapist App in Image 1 & 2.
+ */
 export default function TherapistDashboard() {
-  const { user } = useAuth();
-  const clinicianName = user?.name || 'Dr. Sarah Jenkins';
-
-  const summaryMetrics = {
-    activePatients: 24,
-    overallAdherence: 87.5,
-    criticalAlerts: 3,
-    sessionsCompletedToday: 12,
-  };
-
-  const highPriorityAlerts = [
-    {
-      id: 'alt-1',
-      patientId: 'pt-101',
-      patientName: 'John Doe',
-      alertType: 'High Pain Rating',
-      severity: 'high',
-      description: 'Reported pain level 8/10 on Seated Knee Extension (Target Flexion 90°)',
-      time: '25 min ago',
-    },
-    {
-      id: 'alt-2',
-      patientId: 'pt-103',
-      patientName: 'Michael Chen',
-      alertType: 'Adherence Warning',
-      severity: 'medium',
-      description: 'Missed 3 consecutive scheduled rehabilitation sessions for Lumbar Stabilization',
-      time: '2 hours ago',
-    },
-    {
-      id: 'alt-3',
-      patientId: 'pt-102',
-      patientName: 'Sarah Smith',
-      alertType: 'ROM Regression',
-      severity: 'high',
-      description: 'Shoulder abduction ROM dropped by 15° compared to baseline post-op week 3',
-      time: 'Yesterday',
-    },
-  ];
-
-  const recentSessions = [
-    {
-      id: 'sess-1',
-      patientId: 'pt-101',
-      patientName: 'John Doe',
-      exerciseName: 'Seated Knee Extension with Quad Hold',
-      accuracyScore: 92,
-      painScore: 3,
-      completedAt: 'Today at 09:45 AM',
-      status: 'Completed',
-    },
-    {
-      id: 'sess-2',
-      patientId: 'pt-102',
-      patientName: 'Sarah Smith',
-      exerciseName: 'Shoulder Abduction & Scapular Setting',
-      accuracyScore: 88,
-      painScore: 2,
-      completedAt: 'Today at 08:30 AM',
-      status: 'Completed',
-    },
-    {
-      id: 'sess-3',
-      patientId: 'pt-104',
-      patientName: 'Emma Watson',
-      exerciseName: 'Ankle Dorsiflexion & Plantarflexion',
-      accuracyScore: 95,
-      painScore: 1,
-      completedAt: 'Yesterday at 04:15 PM',
-      status: 'Completed',
-    },
-    {
-      id: 'sess-4',
-      patientId: 'pt-105',
-      patientName: 'David Miller',
-      exerciseName: 'Cervical Spine Gentle Lateral Rotation',
-      accuracyScore: 84,
-      painScore: 4,
-      completedAt: 'Yesterday at 02:00 PM',
-      status: 'Completed',
-    },
-  ];
+  const clinician = currentClinicianProfile;
+  const metrics = therapistDashboardMetrics;
 
   return (
-    <div className="page-container">
-      {/* Clinician Welcome Header */}
-      <div className="dashboard-welcome-banner">
+    <div className="page-container therapist-dashboard-page">
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: 24 }}>
         <div>
-          <h1 className="page-title">Welcome back, {clinicianName}</h1>
+          <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">
-            Rehabilitation Command Center &bull; {summaryMetrics.criticalAlerts} patients require clinical review today.
+            Welcome back, {clinician.name} &bull; Clinical care command center
           </p>
         </div>
-        <div className="dashboard-quick-actions">
+        <div style={{ display: 'flex', gap: 10 }}>
           <Link to={ROUTES.THERAPIST.ASSIGN} className="btn btn-primary">
             + Assign Exercise
           </Link>
-          <Link to={ROUTES.THERAPIST.EXERCISES} className="btn btn-outline">
-            Exercise Catalog
-          </Link>
-          <Link to={ROUTES.THERAPIST.PATIENTS} className="btn btn-secondary">
-            Patient Directory
-          </Link>
         </div>
       </div>
 
-      {/* KPI Metrics Summary Grid */}
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="metric-label">Active Patients</span>
-            <span className="metric-icon">👥</span>
-          </div>
-          <div className="metric-value">{summaryMetrics.activePatients}</div>
-          <p className="metric-subtext">Assigned active care cohort</p>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="metric-label">Caseload Adherence</span>
-            <span className="metric-icon">📈</span>
-          </div>
-          <div className="metric-value">{summaryMetrics.overallAdherence}%</div>
-          <p className="metric-subtext">+4.2% vs previous 30 days</p>
-        </div>
-
-        <div className="metric-card metric-alert">
-          <div className="metric-header">
-            <span className="metric-label">Pain & Risk Alerts</span>
-            <span className="metric-icon">⚠️</span>
-          </div>
-          <div className="metric-value" style={{ color: '#ef4444' }}>
-            {summaryMetrics.criticalAlerts}
-          </div>
-          <p className="metric-subtext">Requiring immediate clinical triage</p>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="metric-label">Completed Today</span>
-            <span className="metric-icon">✅</span>
-          </div>
-          <div className="metric-value">{summaryMetrics.sessionsCompletedToday}</div>
-          <p className="metric-subtext">Telemetry logs synchronized</p>
-        </div>
-      </div>
-
-      {/* High-Priority Clinical Alerts Section */}
-      <Card
-        title="High-Priority Clinical Alerts"
-        subtitle="Unresolved symptoms, high pain scores, or compliance anomalies"
+      {/* 4 KPI Metrics Cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: 16,
+          marginBottom: 28,
+        }}
       >
-        <div className="alerts-list">
-          {highPriorityAlerts.map((alert) => (
-            <div key={alert.id} className={`alert-item alert-${alert.severity}`}>
-              <div className="alert-content">
-                <div className="alert-title-row">
-                  <span className="alert-patient-name">{alert.patientName}</span>
-                  <span className={`badge badge-${alert.severity}`}>{alert.alertType}</span>
-                  <span className="alert-time">{alert.time}</span>
-                </div>
-                <p className="alert-description">{alert.description}</p>
-              </div>
-              <div className="alert-actions">
-                <Link
-                  to={`/therapist/patients/${alert.patientId}/progress`}
-                  className="btn btn-outline btn-sm"
+        <StatCard
+          label="Total Patients"
+          value={metrics.totalPatients.value}
+          delta={metrics.totalPatients.delta}
+          isPositive={metrics.totalPatients.isPositive}
+          icon={<span>👥</span>}
+        />
+        <StatCard
+          label="Active Exercises"
+          value={metrics.activeExercises.value}
+          delta={metrics.activeExercises.delta}
+          isPositive={metrics.activeExercises.isPositive}
+          icon={<span>🏋️</span>}
+        />
+        <StatCard
+          label="Sessions This Week"
+          value={metrics.sessionsThisWeek.value}
+          delta={metrics.sessionsThisWeek.delta}
+          isPositive={metrics.sessionsThisWeek.isPositive}
+          icon={<span>📈</span>}
+        />
+        <StatCard
+          label="Completion Rate"
+          value={metrics.completionRate.value}
+          delta={metrics.completionRate.delta}
+          isPositive={metrics.completionRate.isPositive}
+          icon={<span>🎯</span>}
+        />
+      </div>
+
+      {/* Main Grid: Left Column (Recent Activity & Sessions Chart) + Right Column (Top Performing & Today's Pending) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)',
+          gap: 24,
+        }}
+        className="dashboard-columns-grid"
+      >
+        {/* Left Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Recent Activity */}
+          <Card
+            title="Recent Activity"
+            subtitle="Live patient telemetry and exercise completions"
+            headerRight={
+              <Link
+                to={ROUTES.THERAPIST.SESSIONS}
+                style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary-indigo)' }}
+              >
+                View All Activity
+              </Link>
+            }
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {recentActivities.map((act) => (
+                <div
+                  key={act.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--color-surface-elevated)',
+                    gap: 12,
+                  }}
                 >
-                  Review Patient &rarr;
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Recent Completed Patient Sessions Feed */}
-      <Card
-        title="Recent Completed Rehab Sessions"
-        subtitle="Live telemetry feed and AI movement accuracy checkpoints"
-      >
-        <div className="table-responsive">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Prescribed Exercise</th>
-                <th>AI Form Accuracy</th>
-                <th>Pain Level</th>
-                <th>Completed Timestamp</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentSessions.map((sess) => (
-                <tr key={sess.id}>
-                  <td>
-                    <Link
-                      to={`/therapist/patients/${sess.patientId}`}
-                      className="table-link font-bold"
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        background: act.status === 'completed' ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
+                        color: act.status === 'completed' ? 'var(--accent-mint)' : 'var(--color-error)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: 14,
+                      }}
                     >
-                      {sess.patientName}
-                    </Link>
-                  </td>
-                  <td>{sess.exerciseName}</td>
-                  <td>
-                    <span className="accuracy-badge accuracy-high">
-                      {sess.accuracyScore}%
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`pain-badge pain-${sess.painScore <= 3 ? 'low' : sess.painScore <= 6 ? 'med' : 'high'}`}>
-                      {sess.painScore} / 10
-                    </span>
-                  </td>
-                  <td className="text-muted">{sess.completedAt}</td>
-                  <td>
-                    <Link
-                      to={`/therapist/patients/${sess.patientId}/progress`}
-                      className="btn btn-outline btn-sm"
-                    >
-                      View Telemetry
-                    </Link>
-                  </td>
-                </tr>
+                      {act.status === 'completed' ? '✓' : '!'}
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {act.patientName}{' '}
+                      </span>
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {act.action}
+                      </span>
+                      <p style={{ margin: '2px 0 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
+                        {act.time}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </Card>
+
+          {/* Sessions Overview (This Week) */}
+          <Card
+            title="Sessions Overview (This Week)"
+            subtitle="Daily completed rehabilitation routines"
+          >
+            <SimpleLineChart
+              data={sessionsOverviewWeekly}
+              xKey="day"
+              yKey="sessions"
+              height={160}
+              strokeColor="#6366F1"
+              yMin={0}
+              yMax={10}
+            />
+          </Card>
         </div>
-      </Card>
+
+        {/* Right Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Top Performing Patients */}
+          <Card
+            title="Top Performing Patients"
+            subtitle="Adherence and consistency ranking"
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {topPerformingPatients.map((p) => (
+                <div key={p.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</span>
+                    <strong style={{ color: 'var(--primary-indigo)' }}>{p.completionRate}%</strong>
+                  </div>
+                  <div className="progress-bar-track">
+                    <div
+                      className="progress-bar-fill progress-bar-fill-mint"
+                      style={{ width: `${p.completionRate}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Today's Pending Alerts */}
+          <Card
+            title="Today's Pending"
+            subtitle="Tasks requiring clinical attention"
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {todaysPendingAlerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid',
+                    borderColor: alert.type === 'warning' ? 'var(--color-warning-border)' : 'var(--color-info-border)',
+                    background: alert.type === 'warning' ? 'var(--color-warning-bg)' : 'var(--color-info-bg)',
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>
+                    {alert.type === 'warning' ? '👥' : '📋'}
+                  </span>
+                  <div>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {alert.count}{' '}
+                    </span>
+                    <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                      {alert.text}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

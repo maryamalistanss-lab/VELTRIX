@@ -1,0 +1,329 @@
+﻿/* ============================================================
+   VELTRIX BRAND & SPLASH SCREEN STYLES
+   ============================================================ */
+
+/* Brand Wrapper */
+.veltrix-brand-root {
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+
+.veltrix-brand-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* Wordmark Typography */
+.brand-wordmark-title,
+.brand-wordmark-large,
+.brand-wordmark-compact,
+.splash-wordmark {
+  font-family: var(--font-family);
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  display: inline-flex;
+  align-items: baseline;
+  text-transform: uppercase;
+}
+
+.brand-text-main {
+  color: var(--primary-indigo);
+  transition: color var(--transition-fast);
+}
+
+/* In dark mode or on dark sidebar */
+[data-theme='dark'] .brand-text-main,
+.veltrix-sidebar .brand-text-main {
+  color: #FFFFFF;
+}
+
+/* Stylized Dot on I and Cyan X */
+.brand-text-i {
+  color: var(--primary-indigo);
+  position: relative;
+}
+
+[data-theme='dark'] .brand-text-i,
+.veltrix-sidebar .brand-text-i {
+  color: #FFFFFF;
+}
+
+.brand-text-x {
+  background: linear-gradient(135deg, #06B6D4 0%, #10B981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+}
+
+/* Sidebar Brand Lockup */
+.brand-sidebar-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-sidebar-text-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-sidebar-lockup .brand-wordmark-title {
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: 0.15em;
+}
+
+.brand-sidebar-portal-tag {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  color: var(--accent-mint);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.brand-sidebar-mini-tagline {
+  font-size: 9px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+/* Compact Brand Lockup (Header / Navbar) */
+.brand-compact-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-compact-lockup .brand-wordmark-compact {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.brand-compact-portal {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--accent-mint);
+  letter-spacing: 0.06em;
+}
+
+/* Full Brand Lockup (Login / Entry / Centered) */
+.brand-full-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.brand-full-lockup .brand-wordmark-large {
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: 0.22em;
+  margin-top: 4px;
+}
+
+.brand-tagline-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.16em;
+  color: var(--text-secondary);
+}
+
+.tagline-dot {
+  color: var(--brand-cyan);
+  font-size: 14px;
+}
+
+.brand-portal-pill-badge {
+  margin-top: 4px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--accent-mint);
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Official Image Fallback/Integration */
+.brand-official-image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 320px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.brand-official-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.06));
+}
+
+/* ------------------------------------------------------------
+   SPLASH SCREEN ANIMATION
+   ------------------------------------------------------------ */
+.veltrix-splash-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease-out;
+}
+
+.splash-skip-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.splash-skip-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary-indigo);
+  border-color: var(--primary-indigo);
+}
+
+.splash-stage-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 400px;
+  height: 320px;
+}
+
+/* Particle Emergence & Convergence */
+.splash-particles-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.splash-dot {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease;
+}
+
+.splash-dot-0 { color: #8B5CF6; background: #8B5CF6; }
+.splash-dot-1 { color: #06B6D4; background: #06B6D4; }
+.splash-dot-2 { color: #10B981; background: #10B981; }
+
+.particles-floating .splash-dot {
+  transform: translate(var(--rand-x), var(--rand-y)) scale(1);
+  opacity: 0.85;
+}
+
+.particles-converging .splash-dot {
+  transform: translate(var(--dest-x), var(--dest-y)) scale(1.4);
+  opacity: 1;
+}
+
+/* Mark Stages */
+.splash-mark-wrapper {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+
+.splash-mark-wrapper.stage-1,
+.splash-mark-wrapper.stage-2,
+.splash-mark-wrapper.stage-3 {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.splash-mark-wrapper.stage-4 {
+  opacity: 0.85;
+  transform: scale(0.95);
+}
+
+.splash-mark-wrapper.stage-5,
+.splash-mark-wrapper.stage-6,
+.splash-mark-wrapper.stage-7,
+.splash-mark-wrapper.stage-static {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Wordmark emergence */
+.splash-wordmark {
+  font-size: 34px;
+  letter-spacing: 0.24em;
+  margin-top: 18px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.splash-wordmark.wordmark-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tagline emergence */
+.splash-tagline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.2em;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.splash-tagline.tagline-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Progress indicator bar at bottom */
+.splash-progress-track {
+  position: absolute;
+  bottom: 0;
+  width: 140px;
+  height: 3px;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.splash-progress-bar {
+  height: 100%;
+  background: var(--brand-gradient);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}

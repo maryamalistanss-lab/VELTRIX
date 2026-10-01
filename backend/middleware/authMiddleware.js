@@ -15,9 +15,9 @@ const authMiddleware = (req, res, next) => {
     });
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.substring(7).trim();
 
-  if (!token) {
+  if (!token || token === "null" || token === "undefined") {
     return res.status(401).json({
       success: false,
       message: "Authentication token is missing",
@@ -27,12 +27,24 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId || decoded.sub;
+    const role = decoded.role ? String(decoded.role).toUpperCase() : null;
+
+    if (!userId || !role || !["PATIENT", "THERAPIST"].includes(role)) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication failed. Invalid token or credentials.",
+        error: "UNAUTHORIZED"
+      });
+    }
+
     req.user = {
-      userId: decoded.userId || decoded.sub,
-      id: decoded.userId || decoded.sub,
+      userId,
+      id: userId,
       email: decoded.email,
-      role: decoded.role
+      role
     };
+
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {

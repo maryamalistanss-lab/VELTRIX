@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const exerciseRoutes = require("./routes/exerciseRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
@@ -23,6 +24,9 @@ app.get("/api/health", (req, res) => {
 
 // Authentication Routes
 app.use("/api/auth", authRoutes);
+
+// User Routes
+app.use("/api/users", userRoutes);
 
 // Exercise Routes
 app.use("/api/exercises", exerciseRoutes);

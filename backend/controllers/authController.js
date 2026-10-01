@@ -41,7 +41,8 @@ const register = async (req, res) => {
       });
     }
 
-    if (!role || !["PATIENT", "THERAPIST"].includes(role)) {
+    const normalizedRole = typeof role === "string" ? role.trim().toUpperCase() : null;
+    if (!normalizedRole || !["PATIENT", "THERAPIST"].includes(normalizedRole)) {
       return res.status(400).json({
         success: false,
         message: "Role must be either 'PATIENT' or 'THERAPIST'",
@@ -53,7 +54,7 @@ const register = async (req, res) => {
       name,
       email,
       password,
-      role
+      role: normalizedRole
     });
 
     return res.status(201).json({

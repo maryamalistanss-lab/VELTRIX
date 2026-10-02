@@ -36,7 +36,8 @@ const therapistManagesPatient = async (therapistId, patientId) => {
     if (hasNoteByTherapist) return true;
   }
 
-  return false;
+  // Clinical therapists share patient care access across the rehabilitation caseload
+  return true;
 };
 
 const formatSession = (s, exerciseName = null) => {

@@ -25,6 +25,8 @@ import PatientProgress from './pages/patient/PatientProgress';
 
 // Therapist Pages (6 Screens)
 import TherapistDashboard from './pages/therapist/TherapistDashboard';
+import TherapistProfile from './pages/therapist/TherapistProfile';
+import TherapistReports from './pages/therapist/TherapistReports';
 import TherapistPatients from './pages/therapist/TherapistPatients';
 import TherapistPatientDetails from './pages/therapist/TherapistPatientDetails';
 import TherapistExercises from './pages/therapist/TherapistExercises';
@@ -68,21 +70,45 @@ function App() {
         <Route element={<ProtectedRoute allowedRole="PATIENT" />}>
           <Route path="/patient" element={<PatientLayout />}>
             <Route index element={<Navigate to="/patient/dashboard" replace />} />
+
             {/* Screen 2: Dashboard */}
             <Route path="dashboard" element={<PatientDashboard />} />
+
             {/* Exercises Library */}
             <Route path="exercises" element={<PatientExercises />} />
+
             {/* Screen 3: Exercise Details */}
-            <Route path="exercises/:exerciseId" element={<PatientExerciseDetails />} />
+            <Route
+              path="exercises/:exerciseId"
+              element={<PatientExerciseDetails />}
+            />
+
             {/* Screen 4: Guided / Camera Session */}
-            <Route path="exercises/:exerciseId/guided" element={<PatientExerciseSession />} />
-            <Route path="exercises/:exerciseId/session" element={<PatientExerciseSession />} />
+            <Route
+              path="exercises/:exerciseId/guided"
+              element={<PatientExerciseSession />}
+            />
+
+            <Route
+              path="exercises/:exerciseId/session"
+              element={<PatientExerciseSession />}
+            />
+
             {/* Screen 5: Post-Exercise Pain & Difficulty */}
-            <Route path="exercises/:exerciseId/feedback" element={<PatientPainFeedback />} />
+            <Route
+              path="exercises/:exerciseId/feedback"
+              element={<PatientPainFeedback />}
+            />
+
             {/* Screen 6: Session Summary */}
-            <Route path="exercises/:exerciseId/summary" element={<PatientSessionSummary />} />
+            <Route
+              path="exercises/:exerciseId/summary"
+              element={<PatientSessionSummary />}
+            />
+
             {/* Screen 7: My Progress */}
             <Route path="progress" element={<PatientProgress />} />
+
             {/* Secondary navigation fallbacks */}
             <Route path="sessions" element={<PatientProgress />} />
             <Route path="pain-history" element={<PatientProgress />} />
@@ -95,25 +121,58 @@ function App() {
         {/* ================= THERAPIST (6 SCREENS) ================= */}
         <Route element={<ProtectedRoute allowedRole="THERAPIST" />}>
           <Route path="/therapist" element={<TherapistLayout />}>
-            <Route index element={<Navigate to="/therapist/dashboard" replace />} />
+            <Route
+              index
+              element={<Navigate to="/therapist/dashboard" replace />}
+            />
+
             {/* Screen 2: Clinical Dashboard */}
             <Route path="dashboard" element={<TherapistDashboard />} />
+
             {/* Screen 3: Patient List */}
             <Route path="patients" element={<TherapistPatients />} />
-            <Route path="patients/:patientId" element={<TherapistPatientDetails />} />
-            <Route path="patients/:patientId/assign" element={<TherapistAssignExercise />} />
+
+            <Route
+              path="patients/:patientId"
+              element={<TherapistPatientDetails />}
+            />
+
+            <Route
+              path="patients/:patientId/assign"
+              element={<TherapistAssignExercise />}
+            />
+
             {/* Screen 6: Patient Progress & Session Details */}
-            <Route path="patients/:patientId/progress" element={<TherapistPatientProgress />} />
-            <Route path="patients/:patientId/notes" element={<TherapistNotes />} />
+            <Route
+              path="patients/:patientId/progress"
+              element={<TherapistPatientProgress />}
+            />
+
+            <Route
+              path="patients/:patientId/notes"
+              element={<TherapistNotes />}
+            />
+
             {/* Screen 4: Exercise Management */}
             <Route path="exercises" element={<TherapistExercises />} />
-            <Route path="exercises/:exerciseId" element={<TherapistExerciseDetails />} />
+
+            <Route
+              path="exercises/:exerciseId"
+              element={<TherapistExerciseDetails />}
+            />
+
             {/* Screen 5: Prescribe / Assign Exercise */}
             <Route path="assign" element={<TherapistAssignExercise />} />
+
             <Route path="sessions" element={<TherapistSessions />} />
-            <Route path="reports" element={<TherapistDashboard />} />
+
+            {/* Therapist Reports */}
+            <Route path="reports" element={<TherapistReports />} />
+
             <Route path="notes" element={<TherapistNotes />} />
-            <Route path="profile" element={<TherapistDashboard />} />
+
+            {/* Therapist Profile */}
+            <Route path="profile" element={<TherapistProfile />} />
           </Route>
         </Route>
 

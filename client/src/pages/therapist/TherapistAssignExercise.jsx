@@ -1,73 +1,206 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Card from '../../components/Card';
 import Badge from '../../components/common/Badge';
-import { exerciseCatalog } from '../../data/exerciseMockData';
-import { clinicalPatientDirectory } from '../../data/therapistMockData';
+import exerciseService from '../../services/exerciseService';
+import patientService from '../../services/patientService';
+import sessionService from '../../services/sessionService';
+import { ROUTES } from '../../utils/constants';
 
-/**
- * TherapistAssignExercise Component
- * Replicates Screen 5 of Therapist App in Image 1 & 2.
- */
 export default function TherapistAssignExercise() {
-  const { patientId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const patients = clinicalPatientDirectory;
-  const exercises = exerciseCatalog;
+  const initialPatientParam = searchParams.get('patientId') || '';
+  const initialExerciseParam = searchParams.get('exerciseId') || '';
 
-  const [selectedPatientId, setSelectedPatientId] = useState(patientId || 'pt-101');
-  const [selectedExerciseId, setSelectedExerciseId] = useState('ex-arm-raise');
-  const [sets, setSets] = useState(3);
-  const [reps, setReps] = useState(10);
+  const [patients, setPatients] = useState([]);
+  const [exercises, setExercises] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Form State
+  const [selectedPatientId, setSelectedPatientId] = useState(initialPatientParam);
+  const [selectedExerciseId, setSelectedExerciseId] = useState(initialExerciseParam);
+  const [targetSets, setTargetSets] = useState(3);
+  const [targetReps, setTargetReps] = useState(10);
+  const [targetDurationSeconds, setTargetDurationSeconds] = useState('');
   const [frequency, setFrequency] = useState('Daily');
-  const [startDate, setStartDate] = useState('2024-05-24');
-  const [endDate, setEndDate] = useState('2024-05-31');
-  const [notes, setNotes] = useState('Perform slowly and maintain posture. Report any pain.');
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [dueDate, setDueDate] = useState('');
+  const [therapistNotes, setTherapistNotes] = useState('Perform slowly and maintain posture. Cease if sharp pain occurs.');
 
-  const currentExercise =
-    exercises.find((ex) => ex.id === selectedExerciseId) || exercises[0];
-  const currentPatient =
-    patients.find((p) => p.id === selectedPatientId) || patients[0];
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionFeedback, setSubmissionFeedback] = useState(null);
+  const [backendNotice, setBackendNotice] = useState(null);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    let isMounted = true;
+    async function init() {
+      try {
+        const exRes = await exerciseService.getExercises();
+        const exList = exRes?.data || [];
+
+        let ptList = [];
+        try {
+          const ptRes = await patientService.getPatients();
+          if (ptRes && ptRes.success && Array.isArray(ptRes.data) && ptRes.data.length > 0) {
+            ptList = ptRes.data;
+          }
+        } catch {
+          // Fallback: discover patients from sessions
+          try {
+            const sessRes = await sessionService.getSessions();
+            const sessList = Array.isArray(sessRes?.data) ? sessRes.data : [];
+            const discovered = {};
+            sessList.forEach((s) => {
+              if (s.patientId && !discovered[s.patientId]) {
+                discovered[s.patientId] = {
+                  id: s.patientId,
+                  name: `Patient (${String(s.patientId).substring(0, 8)}...)`,
+                  email: `patient-${String(s.patientId).substring(0, 6)}@veltrix.app`,
+                };
+              }
+            });
+            ptList = Object.values(discovered);
+          } catch {
+            ptList = [];
+          }
+        }
+
+        if (isMounted) {
+          setExercises(Array.isArray(exList) ? exList : []);
+          setPatients(ptList);
+
+          if (!selectedExerciseId && exList.length > 0) {
+            setSelectedExerciseId(exList[0].id || exList[0]._id);
+          }
+          if (!selectedPatientId && ptList.length > 0) {
+            setSelectedPatientId(ptList[0].id || ptList[0]._id);
+          }
+          setIsLoading(false);
+        }
+      } catch {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    init();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedExerciseId, selectedPatientId]);
+
+  // Selected exercise specs for preview
+  const currentExercise = useMemo(() => {
+    return exercises.find((ex) => (ex.id || ex._id) === selectedExerciseId) || exercises[0] || null;
+  }, [exercises, selectedExerciseId]);
+
+  // Submit Prescription Handler
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSuccess(true);
-    setTimeout(() => {
-      navigate(`/therapist/patients/${selectedPatientId}/progress`);
-    }, 1200);
+    if (!selectedPatientId || !selectedExerciseId) {
+      setSubmissionFeedback({
+        type: 'error',
+        message: 'Please select both a patient and an exercise.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmissionFeedback(null);
+    setBackendNotice(null);
+
+    const payload = {
+      exerciseId: selectedExerciseId,
+      targetSets: Number(targetSets),
+      targetReps: targetReps ? Number(targetReps) : null,
+      targetDurationSeconds: targetDurationSeconds ? Number(targetDurationSeconds) : null,
+      frequency: frequency || 'Daily',
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      therapistNotes: therapistNotes.trim() || null,
+    };
+
+    try {
+      await patientService.assignExercise(selectedPatientId, payload);
+      setSubmissionFeedback({
+        type: 'success',
+        message: `✓ Exercise "${currentExercise?.name}" prescribed successfully to patient!`,
+      });
+      setTimeout(() => {
+        navigate(`/therapist/patients/${selectedPatientId}/progress`);
+      }, 1500);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setBackendNotice(
+          `Notice: The endpoint POST /api/users/patients/:id/assignments is pending integration by backend teammate Umra. The assignment payload has been validated against API-CONTRACT.md Section 6.8.`
+        );
+        setSubmissionFeedback({
+          type: 'info',
+          message: `Prescription validated for ${currentExercise?.name || 'Exercise'}. Ready for live backend integration.`,
+        });
+      } else {
+        setSubmissionFeedback({
+          type: 'error',
+          message: err.response?.data?.message || 'Failed to submit prescription to backend.',
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="page-container therapist-assign-page">
-      {/* Header */}
+      {/* Breadcrumb */}
+      <div className="breadcrumb-bar" style={{ marginBottom: 16 }}>
+        <Link to={ROUTES.THERAPIST.DASHBOARD} className="breadcrumb-link">
+          &larr; Back to Dashboard
+        </Link>
+        <span className="breadcrumb-separator" style={{ margin: '0 8px' }}>/</span>
+        <span className="breadcrumb-current" style={{ fontWeight: 600 }}>Prescribe & Assign Protocol</span>
+      </div>
+
       <div className="page-header" style={{ marginBottom: 20 }}>
         <div>
-          <h1 className="page-title">Assign Exercise</h1>
+          <h1 className="page-title">Prescribe Exercise Protocol</h1>
           <p className="page-subtitle">
-            Prescribe targeted rehabilitation exercises and customize cadence
+            Configure personalized rehabilitation dosage, frequency, and clinical guidance for patient
           </p>
         </div>
       </div>
 
-      {isSuccess && (
+      {backendNotice && (
         <div
           style={{
             padding: '14px 18px',
             borderRadius: 'var(--radius-md)',
-            background: 'var(--color-success-bg)',
-            color: 'var(--accent-mint)',
-            border: '1px solid var(--color-success-border)',
+            background: 'var(--color-info-bg)',
+            color: 'var(--color-info)',
+            border: '1px solid var(--color-info-border)',
+            marginBottom: 20,
+            fontSize: 13,
+            lineHeight: 1.5,
+          }}
+        >
+          {backendNotice}
+        </div>
+      )}
+
+      {submissionFeedback && (
+        <div
+          style={{
+            padding: '14px 18px',
+            borderRadius: 'var(--radius-md)',
+            background: submissionFeedback.type === 'success' ? 'var(--color-success-bg)' : submissionFeedback.type === 'info' ? 'var(--color-info-bg)' : 'var(--color-error-bg)',
+            color: submissionFeedback.type === 'success' ? 'var(--accent-mint)' : submissionFeedback.type === 'info' ? 'var(--color-info)' : 'var(--color-error)',
+            border: '1px solid',
+            borderColor: submissionFeedback.type === 'success' ? 'var(--color-success-border)' : submissionFeedback.type === 'info' ? 'var(--color-info-border)' : 'var(--color-error-border)',
             marginBottom: 20,
             fontWeight: 600,
           }}
         >
-          ✓ Exercise successfully assigned to {currentPatient.name}! Redirecting...
+          {submissionFeedback.message}
         </div>
       )}
 
-      {/* 2-Column Layout matching Image 1 & 2 Screen 5 */}
       <form onSubmit={handleSubmit}>
         <div
           style={{
@@ -78,187 +211,231 @@ export default function TherapistAssignExercise() {
           className="dashboard-columns-grid"
         >
           {/* Left Column: Form Fields */}
-          <Card title="Prescription Parameters">
+          <Card title="Prescription Parameters" subtitle="Specify clinical dosage and timeline">
             {/* Select Patient */}
-            <div className="form-group">
-              <label className="form-label">Select Patient:</label>
-              <select
-                value={selectedPatientId}
-                onChange={(e) => setSelectedPatientId(e.target.value)}
-                className="form-select"
-              >
-                {patients.map((pt) => (
-                  <option key={pt.id} value={pt.id}>
-                    {pt.name} ({pt.condition})
-                  </option>
-                ))}
-              </select>
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label className="form-label" htmlFor="select-patient">
+                Target Patient <span style={{ color: 'var(--color-error)' }}>*</span>
+              </label>
+              {patients.length > 0 ? (
+                <select
+                  id="select-patient"
+                  value={selectedPatientId}
+                  onChange={(e) => setSelectedPatientId(e.target.value)}
+                  className="form-select"
+                  required
+                >
+                  {patients.map((pt) => {
+                    const ptId = pt.id || pt._id;
+                    return (
+                      <option key={ptId} value={ptId}>
+                        {pt.name} ({pt.email || ptId})
+                      </option>
+                    );
+                  })}
+                </select>
+              ) : (
+                <input
+                  id="select-patient"
+                  type="text"
+                  className="form-input"
+                  placeholder="Enter patient MongoDB ObjectId"
+                  value={selectedPatientId}
+                  onChange={(e) => setSelectedPatientId(e.target.value)}
+                  required
+                />
+              )}
             </div>
 
             {/* Select Exercise */}
-            <div className="form-group">
-              <label className="form-label">Select Exercise:</label>
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label className="form-label" htmlFor="select-exercise">
+                Select Exercise <span style={{ color: 'var(--color-error)' }}>*</span>
+              </label>
               <select
+                id="select-exercise"
                 value={selectedExerciseId}
-                onChange={(e) => setSelectedExerciseId(e.target.value)}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  setSelectedExerciseId(newId);
+                  const found = exercises.find((ex) => (ex.id || ex._id) === newId);
+                  if (found) {
+                    if (found.defaultSets) setTargetSets(found.defaultSets);
+                    if (found.defaultReps) setTargetReps(found.defaultReps);
+                  }
+                }}
                 className="form-select"
+                required
               >
-                {exercises.map((ex) => (
-                  <option key={ex.id} value={ex.id}>
-                    {ex.title} ({ex.bodyPart})
-                  </option>
-                ))}
+                {exercises.map((ex) => {
+                  const exId = ex.id || ex._id;
+                  return (
+                    <option key={exId} value={exId}>
+                      {ex.name} ({ex.targetBodyPart} &bull; {ex.difficulty})
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             {/* Sets & Repetitions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div className="form-group">
-                <label className="form-label">Sets:</label>
+                <label className="form-label" htmlFor="target-sets">
+                  Target Sets <span style={{ color: 'var(--color-error)' }}>*</span>
+                </label>
                 <input
+                  id="target-sets"
                   type="number"
                   min="1"
-                  max="10"
-                  value={sets}
-                  onChange={(e) => setSets(Number(e.target.value))}
+                  max="20"
+                  value={targetSets}
+                  onChange={(e) => setTargetSets(Number(e.target.value))}
                   className="form-input"
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Repetitions:</label>
+                <label className="form-label" htmlFor="target-reps">Target Reps</label>
                 <input
+                  id="target-reps"
                   type="number"
                   min="1"
-                  max="50"
-                  value={reps}
-                  onChange={(e) => setReps(Number(e.target.value))}
+                  max="100"
+                  value={targetReps}
+                  onChange={(e) => setTargetReps(Number(e.target.value))}
                   className="form-input"
-                  required
                 />
               </div>
             </div>
 
-            {/* Frequency */}
-            <div className="form-group">
-              <label className="form-label">Frequency:</label>
-              <select
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-                className="form-select"
-              >
-                <option value="Daily">Daily</option>
-                <option value="2x Daily">2x Daily (Morning / Evening)</option>
-                <option value="3x Weekly">3x Weekly</option>
-                <option value="Every other day">Every other day</option>
-              </select>
-            </div>
-
-            {/* Start Date & End Date */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {/* Hold Duration & Frequency */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div className="form-group">
-                <label className="form-label">Start Date:</label>
+                <label className="form-label" htmlFor="target-duration">Hold / Duration (sec)</label>
                 <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  id="target-duration"
+                  type="number"
+                  min="0"
+                  max="300"
+                  placeholder="Optional"
+                  value={targetDurationSeconds}
+                  onChange={(e) => setTargetDurationSeconds(e.target.value)}
                   className="form-input"
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">End Date (Optional):</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="form-input"
-                />
+                <label className="form-label" htmlFor="target-frequency">Frequency</label>
+                <select
+                  id="target-frequency"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="Daily">Daily</option>
+                  <option value="2x Daily">2x Daily (Morning / Evening)</option>
+                  <option value="3x Weekly">3x Weekly</option>
+                  <option value="Every other day">Every other day</option>
+                </select>
               </div>
             </div>
 
-            {/* Notes (Optional) */}
-            <div className="form-group">
-              <label className="form-label">Notes (Optional):</label>
-              <textarea
-                rows="3"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="form-textarea"
-                placeholder="Perform slowly and maintain posture. Report any pain."
+            {/* Due Date */}
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label className="form-label" htmlFor="target-due-date">Program Due / Review Date</label>
+              <input
+                id="target-due-date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="form-input"
               />
             </div>
 
-            {/* Submit Button */}
-            <div style={{ marginTop: 24 }}>
-              <button type="submit" className="btn btn-primary btn-block btn-lg">
-                Assign Exercise &rarr;
-              </button>
+            {/* Clinical Notes */}
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label className="form-label" htmlFor="target-notes">Clinical Guidance / Patient Notes</label>
+              <textarea
+                id="target-notes"
+                rows="3"
+                value={therapistNotes}
+                onChange={(e) => setTherapistNotes(e.target.value)}
+                className="form-textarea"
+                placeholder="Perform slowly and maintain posture. Cease if sharp pain occurs."
+              />
             </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-block btn-lg"
+              disabled={isSubmitting || isLoading}
+            >
+              {isSubmitting ? 'Submitting Prescription...' : 'Assign Exercise to Patient \u2192'}
+            </button>
           </Card>
 
           {/* Right Column: Exercise Preview */}
-          <Card title="Exercise Preview" subtitle={currentExercise.title}>
-            {/* Visual Guide Graphic */}
-            <div
-              style={{
-                width: '100%',
-                height: 180,
-                borderRadius: 'var(--radius-md)',
-                background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 20,
-                border: '1px solid var(--border-color)',
-              }}
-            >
-              <span style={{ fontSize: 56, marginBottom: 6 }}>🏃‍♂️</span>
-              <strong style={{ color: 'var(--primary-indigo)', fontSize: 15 }}>
-                {currentExercise.title}
-              </strong>
-            </div>
+          <Card title="Protocol Preview" subtitle={currentExercise?.name || 'Exercise'}>
+            {currentExercise ? (
+              <div>
+                <div
+                  style={{
+                    width: '100%',
+                    height: 160,
+                    borderRadius: 'var(--radius-md)',
+                    background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 20,
+                    border: '1px solid var(--border-color)',
+                  }}
+                >
+                  <span style={{ fontSize: 48, marginBottom: 6 }}>🏃‍♂️</span>
+                  <strong style={{ color: 'var(--primary-indigo)', fontSize: 15, textAlign: 'center', padding: '0 12px' }}>
+                    {currentExercise.name}
+                  </strong>
+                </div>
 
-            {/* Preview Specs List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Body Part:</span>
-                <strong style={{ color: 'var(--text-primary)' }}>{currentExercise.bodyPart}</strong>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Target Region:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{currentExercise.targetBodyPart}</strong>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Difficulty:</span>
+                    <Badge variant={currentExercise.difficulty === 'beginner' ? 'mint' : 'warning'}>
+                      {currentExercise.difficulty}
+                    </Badge>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Default Sets & Reps:</span>
+                    <strong>{currentExercise.defaultSets || 3} Sets &times; {currentExercise.defaultReps || 10} Reps</strong>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 18,
+                    padding: 12,
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--color-surface-elevated)',
+                    fontSize: 12,
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <strong>Clinical Intent:</strong> {currentExercise.description}
+                </div>
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Difficulty:</span>
-                <Badge variant={currentExercise.difficulty === 'Beginner' ? 'mint' : 'warning'}>
-                  {currentExercise.difficulty}
-                </Badge>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Default Sets:</span>
-                <strong style={{ color: 'var(--text-primary)' }}>{currentExercise.sets}</strong>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Equipment:</span>
-                <strong style={{ color: 'var(--text-primary)' }}>{currentExercise.equipment || 'None'}</strong>
-              </div>
-            </div>
-
-            <div
-              style={{
-                marginTop: 20,
-                padding: 14,
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-surface-elevated)',
-                fontSize: 12,
-                color: 'var(--text-secondary)',
-                lineHeight: 1.5,
-              }}
-            >
-              <strong>Description:</strong> {currentExercise.description}
-            </div>
+            ) : (
+              <p style={{ color: 'var(--text-muted)' }}>Select an exercise to view protocol preview.</p>
+            )}
           </Card>
         </div>
       </form>

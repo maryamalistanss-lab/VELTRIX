@@ -6,10 +6,11 @@
  * @param  {...string|string[]} roles - Allowed role(s), e.g. "THERAPIST" or ["PATIENT", "THERAPIST"]
  */
 const roleMiddleware = (...roles) => {
-  const allowedRoles = roles.flat();
+  const allowedRoles = roles.flat().map((r) => String(r).toUpperCase());
 
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
+    const userRole = req.user && req.user.role ? String(req.user.role).toUpperCase() : "";
+    if (!req.user || !allowedRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: "Access denied. You do not have permission to access this resource.",

@@ -64,4 +64,28 @@ const exerciseSchema = new mongoose.Schema(
   }
 );
 
+// Targeted indexes for query performance
+exerciseSchema.index({ createdBy: 1 });
+exerciseSchema.index({ targetBodyPart: 1, difficulty: 1 });
+
+// Virtual aliases for frontend contract compatibility
+exerciseSchema.virtual("sets").get(function () {
+  return this.defaultSets;
+});
+exerciseSchema.virtual("reps").get(function () {
+  return this.defaultReps;
+});
+exerciseSchema.virtual("repetitions").get(function () {
+  return this.defaultReps;
+});
+exerciseSchema.virtual("duration").get(function () {
+  return this.defaultDurationSeconds;
+});
+exerciseSchema.virtual("demonstration").get(function () {
+  return this.demonstrationMedia;
+});
+
+exerciseSchema.set("toJSON", { virtuals: true });
+exerciseSchema.set("toObject", { virtuals: true });
+
 module.exports = mongoose.model("Exercise", exerciseSchema);

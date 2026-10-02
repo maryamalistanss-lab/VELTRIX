@@ -1,8 +1,19 @@
 const mongoose = require("mongoose");
 
+let mongod = null;
+
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    let uri = process.env.MONGODB_URI;
+    if (!uri) {
+      console.log("No MONGODB_URI provided. Initializing local MongoDB instance...");
+      const { MongoMemoryServer } = require("mongodb-memory-server");
+      mongod = await MongoMemoryServer.create();
+      uri = mongod.getUri() + "veltrix";
+      process.env.MONGODB_URI = uri;
+    }
+
+    const conn = await mongoose.connect(uri);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {

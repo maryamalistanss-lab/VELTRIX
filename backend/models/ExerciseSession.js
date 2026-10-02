@@ -66,6 +66,18 @@ const exerciseSessionSchema = new mongoose.Schema(
       enum: ["easy", "moderate", "hard"],
       required: true
     },
+    completionStatus: {
+      type: String,
+      enum: ["in-progress", "completed", "paused", "abandoned"],
+      default: "completed",
+      index: true
+    },
+    notes: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      default: null
+    },
     sessionResults: {
       type: sessionResultsSchema,
       default: () => ({})
@@ -76,5 +88,23 @@ const exerciseSessionSchema = new mongoose.Schema(
     collection: "exercise_sessions"
   }
 );
+
+// Targeted indexes for patient history and progress queries
+exerciseSessionSchema.index({ patientId: 1, completedAt: -1 });
+exerciseSessionSchema.index({ exerciseId: 1 });
+
+// Virtual aliases for frontend contract compatibility
+exerciseSessionSchema.virtual("difficulty").get(function () {
+  return this.perceivedDifficulty;
+});
+exerciseSessionSchema.virtual("repetitionsCompleted").get(function () {
+  return this.repsCompleted;
+});
+exerciseSessionSchema.virtual("date").get(function () {
+  return this.completedAt;
+});
+
+exerciseSessionSchema.set("toJSON", { virtuals: true });
+exerciseSessionSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("ExerciseSession", exerciseSessionSchema);

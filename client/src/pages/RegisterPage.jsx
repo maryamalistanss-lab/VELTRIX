@@ -1,74 +1,136 @@
 ﻿import { useState, useEffect } from 'react';
+
 import { useNavigate, Link } from 'react-router-dom';
+
 import VeltrixBrand from '../components/brand/VeltrixBrand';
+
 import ThemeToggle from '../components/common/ThemeToggle';
+
 import Card from '../components/Card';
+
 import { useAuth } from '../hooks/useAuth';
+
 import { ROUTES } from '../utils/constants';
 
 /**
  * RegisterPage Component
- * Self-registration for Patient Portal with unified VELTRIX brand styling.
+ * Self-registration for Patient and Therapist Portal
+ * with unified VELTRIX brand styling.
  */
+
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // NEW: Account role
+  const [role, setRole] = useState('PATIENT');
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  const { register, isAuthenticated, role, error: authError, clearError } = useAuth();
+  const {
+    register,
+    isAuthenticated,
+    role: authenticatedRole,
+    error: authError,
+    clearError,
+  } = useAuth();
+
   const navigate = useNavigate();
 
+  // Redirect authenticated users to the correct portal
   useEffect(() => {
     if (isAuthenticated) {
-      if (role === 'THERAPIST') {
+      if (authenticatedRole === 'THERAPIST') {
         navigate(ROUTES.THERAPIST.DASHBOARD, { replace: true });
-      } else if (role === 'PATIENT') {
+      } else if (authenticatedRole === 'PATIENT') {
         navigate(ROUTES.PATIENT.DASHBOARD, { replace: true });
       }
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, authenticatedRole, navigate]);
 
   const validateForm = () => {
-    if (!name.trim()) return 'Please enter your full name.';
-    if (!email.trim()) return 'Please enter your email address.';
+    if (!name.trim()) {
+      return 'Please enter your full name.';
+    }
+
+    if (!email.trim()) {
+      return 'Please enter your email address.';
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) return 'Please enter a valid email address.';
-    if (!password) return 'Please enter a password.';
-    if (password.length < 8) return 'Password must be at least 8 characters.';
-    if (password !== confirmPassword) return 'Passwords do not match.';
+
+    if (!emailRegex.test(email.trim())) {
+      return 'Please enter a valid email address.';
+    }
+
+    if (!password) {
+      return 'Please enter a password.';
+    }
+
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters.';
+    }
+
+    if (password !== confirmPassword) {
+      return 'Passwords do not match.';
+    }
+
+    if (!role) {
+      return 'Please select an account type.';
+    }
+
     return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setFormError(null);
     setSuccessMessage(null);
     clearError();
 
     const validationError = validateForm();
+
     if (validationError) {
       setFormError(validationError);
       return;
     }
 
     setIsSubmitting(true);
-    const result = await register(name, email, password, 'PATIENT');
+
+    // IMPORTANT:
+    // Sends the selected role instead of always sending PATIENT.
+    const result = await register(
+      name,
+      email,
+      password,
+      role
+    );
+
     setIsSubmitting(false);
 
     if (result.success) {
-      setSuccessMessage('Registration successful! Redirecting to sign in...');
+      setSuccessMessage(
+        'Registration successful! Redirecting to sign in...'
+      );
+
       setTimeout(() => {
         navigate(ROUTES.LOGIN, {
-          state: { registeredEmail: email.trim(), message: 'Account created! Please sign in.' },
+          state: {
+            registeredEmail: email.trim(),
+            message: 'Account created! Please sign in.',
+          },
         });
       }, 1500);
     } else {
-      setFormError(result.error || 'Registration failed. Please try again.');
+      setFormError(
+        result.error || 'Registration failed. Please try again.'
+      );
     }
   };
 
@@ -87,17 +149,48 @@ export default function RegisterPage() {
         position: 'relative',
       }}
     >
-      <div style={{ position: 'absolute', top: 20, right: 20 }}>
+      {/* Theme Toggle */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+        }}
+      >
         <ThemeToggle />
       </div>
 
-      <div style={{ width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 440,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        {/* VELTRIX Brand */}
         <div style={{ marginBottom: 28 }}>
-          <VeltrixBrand variant="full" size="lg" portalBadge="Patient Self-Registration" />
+          <VeltrixBrand
+            variant="full"
+            size="lg"
+            portalBadge={
+              role === 'THERAPIST'
+                ? 'Therapist Registration'
+                : 'Patient Registration'
+            }
+          />
         </div>
 
-        <Card style={{ width: '100%', padding: 32, boxShadow: 'var(--shadow-elevated)' }}>
-          {/* Tab Switcher */}
+        {/* Main Card */}
+        <Card
+          style={{
+            width: '100%',
+            padding: 32,
+            boxShadow: 'var(--shadow-elevated)',
+          }}
+        >
+          {/* Login / Register Tab Switcher */}
           <div
             style={{
               display: 'flex',
@@ -112,19 +205,27 @@ export default function RegisterPage() {
               type="button"
               onClick={() => navigate(ROUTES.LOGIN)}
               className="btn btn-block btn-sm btn-ghost"
-              style={{ borderRadius: 'var(--radius-sm)', fontWeight: 600 }}
+              style={{
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+              }}
             >
               Login
             </button>
+
             <button
               type="button"
               className="btn btn-block btn-sm btn-primary"
-              style={{ borderRadius: 'var(--radius-sm)', fontWeight: 600 }}
+              style={{
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+              }}
             >
               Register
             </button>
           </div>
 
+          {/* Error Message */}
           {displayedError && (
             <div
               style={{
@@ -142,6 +243,7 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Success Message */}
           {successMessage && (
             <div
               style={{
@@ -159,12 +261,21 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Registration Form */}
           <form onSubmit={handleSubmit}>
+            {/* Full Name */}
             <div className="form-group">
-              <label className="form-label">Full Name</label>
+              <label className="form-label">
+                Full Name
+              </label>
+
               <input
                 type="text"
-                placeholder="e.g. Jane Patient"
+                placeholder={
+                  role === 'THERAPIST'
+                    ? 'e.g. Jane Therapist'
+                    : 'e.g. Jane Patient'
+                }
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="form-input"
@@ -173,11 +284,19 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Email */}
             <div className="form-group">
-              <label className="form-label">Email Address</label>
+              <label className="form-label">
+                Email Address
+              </label>
+
               <input
                 type="email"
-                placeholder="jane.patient@example.com"
+                placeholder={
+                  role === 'THERAPIST'
+                    ? 'therapist@example.com'
+                    : 'patient@example.com'
+                }
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="form-input"
@@ -186,8 +305,12 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Password */}
             <div className="form-group">
-              <label className="form-label">Password (min 8 chars)</label>
+              <label className="form-label">
+                Password (min 8 chars)
+              </label>
+
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -198,44 +321,108 @@ export default function RegisterPage() {
                   required
                   disabled={isSubmitting}
                 />
+
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() =>
+                    setShowPassword(!showPassword)
+                  }
                   className="btn btn-ghost btn-icon-only"
-                  style={{ position: 'absolute', right: 4, top: 4, height: 32, width: 32 }}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: 4,
+                    top: 4,
+                    height: 32,
+                    width: 32,
+                  }}
+                  aria-label={
+                    showPassword
+                      ? 'Hide password'
+                      : 'Show password'
+                  }
                 >
                   {showPassword ? '🙈' : '👁️'}
                 </button>
               </div>
             </div>
 
+            {/* Confirm Password */}
             <div className="form-group">
-              <label className="form-label">Confirm Password</label>
+              <label className="form-label">
+                Confirm Password
+              </label>
+
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Re-enter password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) =>
+                  setConfirmPassword(e.target.value)
+                }
                 className="form-input"
                 required
                 disabled={isSubmitting}
               />
             </div>
 
+            {/* Account Type */}
+            <div className="form-group">
+              <label className="form-label">
+                Account Type
+              </label>
+
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="form-input"
+                disabled={isSubmitting}
+                required
+              >
+                <option value="PATIENT">
+                  Patient
+                </option>
+
+                <option value="THERAPIST">
+                  Therapist
+                </option>
+              </select>
+            </div>
+
+            {/* Register Button */}
             <button
               type="submit"
               disabled={isSubmitting}
               className="btn btn-primary btn-block btn-lg"
-              style={{ marginTop: 12 }}
+              style={{
+                marginTop: 12,
+              }}
             >
-              {isSubmitting ? 'Creating Account...' : 'Complete Registration'}
+              {isSubmitting
+                ? 'Creating Account...'
+                : 'Complete Registration'}
             </button>
           </form>
 
-          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
-            <span>Already have an account? </span>
-            <Link to={ROUTES.LOGIN} style={{ fontWeight: 600, color: 'var(--primary-indigo)' }}>
+          {/* Login Link */}
+          <div
+            style={{
+              textAlign: 'center',
+              marginTop: 20,
+              fontSize: 13,
+              color: 'var(--text-secondary)',
+            }}
+          >
+            <span>
+              Already have an account?{' '}
+            </span>
+
+            <Link
+              to={ROUTES.LOGIN}
+              style={{
+                fontWeight: 600,
+                color: 'var(--primary-indigo)',
+              }}
+            >
               Sign in
             </Link>
           </div>

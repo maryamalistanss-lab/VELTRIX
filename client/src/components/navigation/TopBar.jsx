@@ -1,21 +1,23 @@
-﻿import ThemeToggle from '../common/ThemeToggle';
+import ThemeToggle from '../common/ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
 
 /**
  * TopBar Component
- * Desktop top bar with search, notification alert, ThemeToggle, and user profile pill.
+ * Desktop top bar with search, notification alert, ThemeToggle, and dynamic authenticated user profile pill.
  */
 export default function TopBar({ onToggleMobileMenu }) {
   const { user } = useAuth();
 
   const isTherapist = user?.role === 'THERAPIST';
-  const userName = user?.name || (isTherapist ? 'Dr. Priya Sharma' : 'Rahul Mehta');
-  const roleLabel = isTherapist ? 'Clinical Therapist' : 'Patient';
+  const userName = user?.name || (isTherapist ? 'Therapist' : 'Patient');
+  const roleLabel = isTherapist ? 'Clinical Therapist' : 'Rehab Patient';
   const initials = userName
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
-    .substring(0, 2);
+    .substring(0, 2)
+    .toUpperCase() || 'VT';
 
   return (
     <header className="veltrix-topbar">

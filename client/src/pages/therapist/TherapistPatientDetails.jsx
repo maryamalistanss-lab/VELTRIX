@@ -1,264 +1,356 @@
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Card from '../../components/Card';
+import Badge from '../../components/common/Badge';
+import patientService from '../../services/patientService';
+import sessionService from '../../services/sessionService';
+import exerciseService from '../../services/exerciseService';
 import { ROUTES } from '../../utils/constants';
 
 export default function TherapistPatientDetails() {
-  const { patientId = 'pt-101' } = useParams();
+  const { patientId } = useParams();
 
-  // Mock patient detailed data aligned with DATABASE-CONTRACT.md and API-CONTRACT.md
-  const patient = {
-    id: patientId,
-    name: patientId === 'pt-102' ? 'Sarah Smith' : patientId === 'pt-103' ? 'Michael Chen' : 'John Doe',
-    email: 'patient@example.com',
-    age: 45,
-    gender: 'Male',
-    phone: '+1 (555) 234-5678',
-    primaryDiagnosis: 'Post-Op Rotator Cuff Repair (Right Shoulder)',
-    targetJoint: 'Shoulder',
-    surgicalDate: '2026-07-15',
-    startDate: '2026-08-01',
-    currentPhase: 'Phase II: Active-Assisted Range of Motion',
-    assignedTherapist: 'Dr. Sarah Jenkins, PT, DPT',
-    adherenceRate: 88,
-    lastPainScore: 3,
-    assignedExercises: [
-      {
-        id: 'asg-1',
-        exerciseId: 'ex-101',
-        name: 'Shoulder Pendulum & Circumduction',
-        targetSets: 3,
-        targetReps: 15,
-        targetHoldSeconds: 0,
-        frequency: '2x daily',
-        targetRom: '0° - 45°',
-        status: 'active',
-        dueDate: '2026-09-30',
-        therapistNotes: 'Allow arm to hang naturally; use gentle torso momentum.',
-      },
-      {
-        id: 'asg-2',
-        exerciseId: 'ex-102',
-        name: 'Assisted Shoulder External Rotation with Towel',
-        targetSets: 3,
-        targetReps: 10,
-        targetHoldSeconds: 5,
-        frequency: '1x daily',
-        targetRom: '0° - 30°',
-        status: 'active',
-        dueDate: '2026-09-30',
-        therapistNotes: 'Keep elbow tucked close to ribcage throughout motion.',
-      },
-      {
-        id: 'asg-3',
-        exerciseId: 'ex-103',
-        name: 'Scapular Retraction & Setting',
-        targetSets: 3,
-        targetReps: 12,
-        targetHoldSeconds: 5,
-        frequency: '2x daily',
-        targetRom: 'Neutral',
-        status: 'active',
-        dueDate: '2026-09-30',
-        therapistNotes: 'Squeeze shoulder blades gently down and back. Avoid shrugging.',
-      },
-    ],
-    therapistNotes: [
-      {
-        id: 'note-1',
-        author: 'Dr. Sarah Jenkins, PT, DPT',
-        date: '2026-08-28',
-        category: 'Clinical Assessment',
-        content: 'Patient showed 15-degree passive forward flexion improvement. Tolerating Phase II active-assisted exercises well with mild post-routine soreness (2/10).',
-        isPatientVisible: true,
-      },
-      {
-        id: 'note-2',
-        author: 'Dr. Sarah Jenkins, PT, DPT',
-        date: '2026-08-15',
-        category: 'Plan Modification',
-        content: 'Initiated towel-assisted external rotation. Emphasized maintaining strict elbow flexion to prevent anterior capsule strain.',
-        isPatientVisible: false,
-      },
-    ],
-  };
+  const [patient, setPatient] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [exercises, setExercises] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadPatientData = useCallback(async () => {
+    if (!patientId) return;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const [exRes, sessRes, ptRes] = await Promise.allSettled([
+        exerciseService.getExercises(),
+        sessionService.getPatientSessions(patientId).catch(() => sessionService.getSessions()),
+        patientService.getPatientById(patientId),
+      ]);
+
+      if (exRes.status === 'fulfilled' && exRes.value?.data) {
+        setExercises(Array.isArray(exRes.value.data) ? exRes.value.data : []);
+      }
+
+      if (sessRes.status === 'fulfilled' && sessRes.value?.data) {
+        const allSessions = Array.isArray(sessRes.value.data) ? sessRes.value.data : [];
+        setSessions(allSessions.filter((s) => String(s.patientId) === String(patientId)));
+      }
+
+      if (ptRes.status === 'fulfilled' && ptRes.value?.data) {
+        setPatient(ptRes.value.data);
+      } else {
+        setPatient({
+          id: patientId,
+          name: `Patient (${String(patientId).substring(0, 8)}...)`,
+          email: `patient-${String(patientId).substring(0, 6)}@veltrix.app`,
+          assignedExercises: [],
+          therapistNotes: [],
+        });
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load patient clinical dossier.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [patientId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function init() {
+      if (!patientId) return;
+      try {
+        const [exRes, sessRes, ptRes] = await Promise.allSettled([
+          exerciseService.getExercises(),
+          sessionService.getPatientSessions(patientId).catch(() => sessionService.getSessions()),
+          patientService.getPatientById(patientId),
+        ]);
+
+        if (isMounted) {
+          if (exRes.status === 'fulfilled' && exRes.value?.data) {
+            setExercises(Array.isArray(exRes.value.data) ? exRes.value.data : []);
+          }
+
+          if (sessRes.status === 'fulfilled' && sessRes.value?.data) {
+            const allSessions = Array.isArray(sessRes.value.data) ? sessRes.value.data : [];
+            setSessions(allSessions.filter((s) => String(s.patientId) === String(patientId)));
+          }
+
+          if (ptRes.status === 'fulfilled' && ptRes.value?.data) {
+            setPatient(ptRes.value.data);
+          } else {
+            setPatient({
+              id: patientId,
+              name: `Patient (${String(patientId).substring(0, 8)}...)`,
+              email: `patient-${String(patientId).substring(0, 6)}@veltrix.app`,
+              assignedExercises: [],
+              therapistNotes: [],
+            });
+          }
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.response?.data?.message || 'Failed to load patient clinical dossier.');
+          setIsLoading(false);
+        }
+      }
+    }
+    init();
+    return () => {
+      isMounted = false;
+    };
+  }, [patientId]);
+
+  const exerciseMap = useMemo(() => {
+    const map = {};
+    exercises.forEach((ex) => {
+      const id = ex.id || ex._id;
+      map[id] = ex;
+    });
+    return map;
+  }, [exercises]);
+
+  const patientName = patient?.name || `Patient ${patientId}`;
+  const initial = (patientName[0] || 'P').toUpperCase();
+
+  const latestPain = useMemo(() => {
+    if (sessions.length === 0) return '—';
+    const sorted = [...sessions].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+    return sorted[0]?.painAfter !== undefined ? `${sorted[0].painAfter} / 10` : '—';
+  }, [sessions]);
+
+  if (isLoading) {
+    return (
+      <div className="page-container" style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            border: '3px solid var(--border-color)',
+            borderTopColor: 'var(--primary-indigo)',
+            borderRadius: '50%',
+            margin: '0 auto 16px auto',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <p style={{ color: 'var(--text-secondary)' }}>Loading patient clinical record...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
-      {/* Breadcrumbs & Title */}
-      <div className="breadcrumb-bar">
+      {/* Breadcrumbs */}
+      <div className="breadcrumb-bar" style={{ marginBottom: 16 }}>
         <Link to={ROUTES.THERAPIST.PATIENTS} className="breadcrumb-link">
           &larr; Back to Patient Directory
         </Link>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">{patient.name}</span>
+        <span className="breadcrumb-separator" style={{ margin: '0 8px' }}>/</span>
+        <span className="breadcrumb-current" style={{ fontWeight: 600 }}>{patientName}</span>
       </div>
 
-      {/* Patient Profile Header Card */}
-      <div className="patient-header-banner">
-        <div className="patient-avatar-box">
-          <div className="patient-avatar-placeholder">
-            {patient.name.split(' ').map(n => n[0]).join('')}
+      {error && (
+        <div
+          style={{
+            padding: '14px 18px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-error-bg)',
+            color: 'var(--color-error)',
+            marginBottom: 20,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>⚠️ {error}</span>
+          <button type="button" onClick={loadPatientData} className="btn btn-outline btn-sm" style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Patient Header Banner */}
+      <div
+        className="patient-header-banner"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 16,
+          padding: '24px',
+          background: 'var(--color-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="avatar avatar-lg">
+            <span>{initial}</span>
           </div>
           <div>
-            <div className="patient-title-row">
-              <h1 className="patient-name-heading">{patient.name}</h1>
-              <span className="badge badge-success">Active Protocol</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <h1 className="page-title" style={{ margin: 0, fontSize: 24 }}>
+                {patientName}
+              </h1>
+              <Badge variant="mint">Active Cohort</Badge>
             </div>
-            <p className="patient-subtitle-meta">
-              ID: {patient.id} &bull; {patient.age} yrs &bull; {patient.gender} &bull; {patient.primaryDiagnosis}
+            <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+              Patient ID: <code>{patientId}</code> &bull; Email: {patient?.email || '—'}
             </p>
           </div>
         </div>
 
-        <div className="patient-header-actions">
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <Link
-            to={`/therapist/patients/${patient.id}/assign`}
+            to={`/therapist/patients/${patientId}/assign`}
             className="btn btn-primary"
           >
             + Assign Exercise
           </Link>
           <Link
-            to={`/therapist/patients/${patient.id}/progress`}
-            className="btn btn-secondary"
-          >
-            View Progress & Telemetry
-          </Link>
-          <Link
-            to={`/therapist/patients/${patient.id}/notes`}
+            to={`/therapist/patients/${patientId}/progress`}
             className="btn btn-outline"
           >
-            Clinical Notes ({patient.therapistNotes.length})
+            Telemetry & Progress
           </Link>
         </div>
       </div>
 
-      {/* Demographics & Clinical Summary Grid */}
-      <div className="card-grid">
-        <Card title="Clinical Summary" subtitle="Rehabilitation protocol parameters">
-          <div className="info-list">
-            <div className="info-item">
-              <span className="info-label">Primary Diagnosis:</span>
-              <span className="info-value font-medium">{patient.primaryDiagnosis}</span>
+      {/* Grid: Overview & Compliance */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 24,
+          marginBottom: 24,
+        }}
+      >
+        <Card title="Clinical Summary" subtitle="Patient account and demographic parameters">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Registered Email:</span>
+              <strong style={{ color: 'var(--text-primary)' }}>{patient?.email || '—'}</strong>
             </div>
-            <div className="info-item">
-              <span className="info-label">Target Joint:</span>
-              <span className="info-value">{patient.targetJoint}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Total Completed Sessions:</span>
+              <strong style={{ color: 'var(--primary-indigo)' }}>{sessions.length}</strong>
             </div>
-            <div className="info-item">
-              <span className="info-label">Protocol Phase:</span>
-              <span className="info-value text-secondary font-medium">{patient.currentPhase}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Assigned Exercise Programs:</span>
+              <strong>{patient?.assignedExercises?.length || 0}</strong>
             </div>
-            <div className="info-item">
-              <span className="info-label">Surgery / Onset Date:</span>
-              <span className="info-value">{patient.surgicalDate}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Rehab Start Date:</span>
-              <span className="info-value">{patient.startDate}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Lead Clinician:</span>
-              <span className="info-value">{patient.assignedTherapist}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Latest Reported Pain:</span>
+              <strong style={{ color: 'var(--accent-mint)' }}>{latestPain}</strong>
             </div>
           </div>
         </Card>
 
-        <Card title="Compliance & Pain Status" subtitle="Longitudinal patient metrics">
-          <div className="stat-summary-box">
-            <div className="stat-row">
-              <div>
-                <span className="stat-title">Overall Adherence</span>
-                <div className="stat-big-number text-primary">{patient.adherenceRate}%</div>
-              </div>
-              <div>
-                <span className="stat-title">Last Reported Pain</span>
-                <div className="stat-big-number" style={{ color: '#10b981' }}>{patient.lastPainScore} / 10</div>
-              </div>
+        <Card title="Latest Session Snapshot" subtitle="Most recent rehabilitation log">
+          {sessions.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ margin: 0 }}>No sessions logged yet for this patient.</p>
             </div>
-
-            <div className="progress-bar-bg" style={{ marginTop: '1rem' }}>
-              <div
-                className="progress-bar-fill fill-green"
-                style={{ width: `${patient.adherenceRate}%` }}
-              ></div>
+          ) : (
+            <div>
+              {(() => {
+                const latest = sessions[0];
+                const exName = exerciseMap[latest.exerciseId]?.name || `Exercise (${String(latest.exerciseId).substring(0, 8)}...)`;
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Routine:</span>
+                      <strong>{exName}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Date:</span>
+                      <span>{new Date(latest.completedAt).toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Volume:</span>
+                      <span>{latest.setsCompleted} sets {latest.repsCompleted ? `× ${latest.repsCompleted} reps` : ''}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Pain Rating:</span>
+                      <strong style={{ color: 'var(--accent-mint)' }}>{latest.painBefore} &rarr; {latest.painAfter} / 10</strong>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
-            <p className="placeholder-text" style={{ marginTop: '0.75rem' }}>
-              Patient has completed 22 of 25 prescribed exercise sets this week with no acute adverse events logged.
-            </p>
-          </div>
+          )}
         </Card>
       </div>
 
-      {/* Active Prescribed Exercises Section */}
+      {/* Active Prescribed Exercises */}
       <Card
         title="Active Prescribed Rehabilitation Plan"
-        subtitle={`Embedded assignedExercises[] (${patient.assignedExercises.length} active prescriptions)`}
-      >
-        <div className="table-responsive">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Exercise</th>
-                <th>Target Sets × Reps</th>
-                <th>Hold Duration</th>
-                <th>Daily Frequency</th>
-                <th>Target ROM</th>
-                <th>Clinical Guidance</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patient.assignedExercises.map((asg) => (
-                <tr key={asg.id}>
-                  <td>
-                    <Link
-                      to={`/therapist/exercises/${asg.exerciseId}`}
-                      className="table-link font-bold"
-                    >
-                      {asg.name}
-                    </Link>
-                  </td>
-                  <td>{asg.targetSets} Sets × {asg.targetReps} Reps</td>
-                  <td>{asg.targetHoldSeconds ? `${asg.targetHoldSeconds}s hold` : 'Fluid motion'}</td>
-                  <td>{asg.frequency}</td>
-                  <td>{asg.targetRom}</td>
-                  <td className="text-muted text-sm">{asg.therapistNotes}</td>
-                  <td>
-                    <span className="badge badge-success">Active</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Clinical Notes Snapshot */}
-      <Card
-        title="Latest Clinical Notes"
-        subtitle="Recent clinical documentation and progress records"
-      >
-        <div className="notes-feed-snapshot">
-          {patient.therapistNotes.map((note) => (
-            <div key={note.id} className="note-card-mini">
-              <div className="note-mini-header">
-                <span className="badge badge-info">{note.category}</span>
-                <span className="text-muted text-sm">{note.date} &bull; {note.author}</span>
-                {note.isPatientVisible ? (
-                  <span className="badge badge-success">Visible to Patient</span>
-                ) : (
-                  <span className="badge badge-secondary">Clinician Only</span>
-                )}
-              </div>
-              <p className="note-mini-body">{note.content}</p>
-            </div>
-          ))}
-        </div>
-        <div className="card-actions" style={{ marginTop: '1rem' }}>
-          <Link to={`/therapist/patients/${patient.id}/notes`} className="btn btn-outline btn-sm">
-            Manage All Notes &rarr;
+        subtitle={`Prescribed protocols for ${patientName}`}
+        headerRight={
+          <Link
+            to={`/therapist/patients/${patientId}/assign`}
+            className="btn btn-primary btn-sm"
+          >
+            + Assign Exercise
           </Link>
-        </div>
+        }
+      >
+        {Array.isArray(patient?.assignedExercises) && patient.assignedExercises.length > 0 ? (
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Exercise</th>
+                  <th>Dosage</th>
+                  <th>Frequency</th>
+                  <th>Status</th>
+                  <th>Due Date</th>
+                  <th>Clinical Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {patient.assignedExercises.map((asg) => {
+                  const asgId = asg.id || asg._id;
+                  const exInfo = exerciseMap[asg.exerciseId];
+                  const exName = exInfo?.name || `Exercise (${String(asg.exerciseId).substring(0, 8)}...)`;
+
+                  return (
+                    <tr key={asgId}>
+                      <td>
+                        <Link
+                          to={`/therapist/exercises/${asg.exerciseId}`}
+                          style={{ fontWeight: 600, color: 'var(--text-primary)' }}
+                        >
+                          {exName}
+                        </Link>
+                      </td>
+                      <td>{asg.targetSets} Sets &times; {asg.targetReps ? `${asg.targetReps} Reps` : `${asg.targetDurationSeconds || ''}s`}</td>
+                      <td>{asg.frequency || 'Daily'}</td>
+                      <td>
+                        <Badge variant={asg.status === 'active' ? 'mint' : 'warning'}>
+                          {asg.status || 'Active'}
+                        </Badge>
+                      </td>
+                      <td>{asg.dueDate ? new Date(asg.dueDate).toLocaleDateString() : '—'}</td>
+                      <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{asg.therapistNotes || '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: '0 0 12px 0' }}>No active exercise prescriptions assigned to this patient.</p>
+            <Link to={`/therapist/patients/${patientId}/assign`} className="btn btn-primary btn-sm">
+              + Prescribe Exercise Routine
+            </Link>
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -1,35 +1,74 @@
-﻿import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import Card from '../../components/Card';
 import PainScaleSelector from '../../components/common/PainScaleSelector';
-import { exerciseCatalog } from '../../data/exerciseMockData';
+import api from '../../services/api';
 
 /**
  * PatientPainFeedback Component
- * Replicates Screen 5 of Patient App in Image 1 & 2 (Pain & Difficulty).
+ * Submits real completed exercise session with pre/post pain and difficulty to POST /api/sessions.
  */
 export default function PatientPainFeedback() {
   const { exerciseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [painLevel, setPainLevel] = useState(3);
-  const [difficulty, setDifficulty] = useState('Moderate');
+  const sessionState = location.state || {};
+  const exerciseName = sessionState.exerciseName || 'Rehabilitation Exercise';
+  const setsCompleted = sessionState.setsCompleted || 3;
+  const repsCompleted = sessionState.repsCompleted || 10;
+  const durationSeconds = sessionState.durationSeconds || 180;
+  const painBefore = sessionState.painBefore !== undefined ? sessionState.painBefore : 2;
+
+  const [painAfter, setPainAfter] = useState(1);
+  const [difficulty, setDifficulty] = useState('moderate'); // 'easy' | 'moderate' | 'hard'
   const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
-  const exercise =
-    exerciseCatalog.find((ex) => ex.id === exerciseId) ||
-    exerciseCatalog.find((ex) => ex.id === 'ex-knee-extension') ||
-    exerciseCatalog[0];
-
-  const handleContinue = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate(`/patient/exercises/${exercise.id}/summary`, {
-      state: {
-        painAfter: painLevel,
-        difficulty,
-        notes,
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    const payload = {
+      exerciseId: sessionState.exerciseId || exerciseId,
+      setsCompleted: Number(setsCompleted),
+      repsCompleted: Number(repsCompleted),
+      durationSeconds: Number(durationSeconds),
+      painBefore: Number(painBefore),
+      painAfter: Number(painAfter),
+      perceivedDifficulty: difficulty, // 'easy' | 'moderate' | 'hard'
+      sessionResults: {
+        feedback: notes.trim() || undefined,
       },
-    });
+    };
+
+    try {
+      const response = await api.post('/sessions', payload);
+
+      if (response.data && response.data.success && response.data.data) {
+        const savedSession = response.data.data;
+        navigate(`/patient/exercises/${exerciseId}/summary`, {
+          state: {
+            session: savedSession,
+            exerciseName,
+          },
+        });
+      } else {
+        setErrorMessage(response.data?.message || 'Failed to save exercise session.');
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      console.error('Session logging error:', err);
+      const msg =
+        err.response?.data?.message ||
+        'Unable to submit exercise session. Please verify your connection and try again.';
+      setErrorMessage(msg);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -37,7 +76,7 @@ export default function PatientPainFeedback() {
       {/* Top Header */}
       <div style={{ marginBottom: 20 }}>
         <Link
-          to={`/patient/exercises/${exercise.id}/guided`}
+          to={`/patient/exercises/${exerciseId}/guided`}
           className="btn btn-ghost btn-sm"
         >
           &larr; Back to Session
@@ -46,26 +85,64 @@ export default function PatientPainFeedback() {
 
       <Card>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <span style={{ fontSize: 36, display: 'block', marginBottom: 8 }}>📋</span>
           <h1 className="page-title" style={{ fontSize: 24, marginBottom: 6 }}>
-            How do you feel?
+            Workout Complete!
           </h1>
           <p className="page-subtitle">
-            Please provide your feedback. We care about your recovery comfort.
+            How do you feel after completing <strong>{exerciseName}</strong>?
           </p>
         </div>
 
-        <form onSubmit={handleContinue}>
+        {/* Pre-workout pain reference indicator */}
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-surface-elevated)',
+            border: '1px solid var(--border-color)',
+            marginBottom: 24,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: 14,
+          }}
+        >
+          <span style={{ color: 'var(--text-secondary)' }}>Pre-Exercise Baseline Pain:</span>
+          <strong style={{ color: 'var(--text-primary)', fontSize: 15 }}>
+            {painBefore} / 10
+          </strong>
+        </div>
+
+        {errorMessage && (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid var(--color-danger, #EF4444)',
+              color: 'var(--color-danger, #EF4444)',
+              fontSize: 14,
+              marginBottom: 24,
+            }}
+          >
+            ⚠️ {errorMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
           {/* Question 1: Pain after exercise */}
           <div style={{ marginBottom: 32 }}>
             <label
               className="form-label"
               style={{ display: 'block', textAlign: 'center', marginBottom: 16, fontSize: 15 }}
             >
-              Pain after exercise:
+              Pain immediately after exercise (0 to 10):
             </label>
             <PainScaleSelector
-              value={painLevel}
-              onChange={setPainLevel}
+              value={painAfter}
+              onChange={setPainAfter}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -81,7 +158,7 @@ export default function PatientPainFeedback() {
               className="form-label"
               style={{ display: 'block', marginBottom: 14, fontSize: 15 }}
             >
-              How difficult was it?
+              How difficult was this session?
             </label>
             <div
               style={{
@@ -90,33 +167,43 @@ export default function PatientPainFeedback() {
                 gap: 12,
               }}
             >
-              {['Easy', 'Moderate', 'Difficult'].map((level) => (
+              {[
+                { value: 'easy', label: 'Easy', desc: 'Minimal exertion, gentle and comfortable.' },
+                { value: 'moderate', label: 'Moderate', desc: 'Appropriate challenge, steady fatigue.' },
+                { value: 'hard', label: 'Hard', desc: 'Significant effort required, demanding.' },
+              ].map((opt) => (
                 <label
-                  key={level}
+                  key={opt.value}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     gap: 12,
                     padding: '12px 16px',
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid',
-                    borderColor: difficulty === level ? 'var(--primary-indigo)' : 'var(--border-color)',
-                    background: difficulty === level ? 'var(--primary-light)' : 'var(--color-surface)',
-                    cursor: 'pointer',
+                    borderColor: difficulty === opt.value ? 'var(--primary-indigo)' : 'var(--border-color)',
+                    background: difficulty === opt.value ? 'var(--primary-light)' : 'var(--color-surface)',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
                     transition: 'all var(--transition-fast)',
                   }}
                 >
                   <input
                     type="radio"
                     name="difficulty"
-                    value={level}
-                    checked={difficulty === level}
+                    value={opt.value}
+                    checked={difficulty === opt.value}
+                    disabled={isSubmitting}
                     onChange={(e) => setDifficulty(e.target.value)}
-                    style={{ accentColor: 'var(--primary-indigo)' }}
+                    style={{ accentColor: 'var(--primary-indigo)', marginTop: 3 }}
                   />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {level}
-                  </span>
+                  <div>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {opt.label}
+                    </span>
+                    <p style={{ margin: '2px 0 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                      {opt.desc}
+                    </p>
+                  </div>
                 </label>
               ))}
             </div>
@@ -125,23 +212,25 @@ export default function PatientPainFeedback() {
           {/* Optional Notes for Therapist */}
           <div style={{ marginBottom: 28 }}>
             <label className="form-label">
-              Any notes for your therapist? (Optional)
+              Notes for your therapist (Optional):
             </label>
             <textarea
               rows="3"
               className="form-textarea"
-              placeholder="e.g. Mild stiffness during second set..."
+              placeholder="e.g., Felt comfortable during set 2, mild tightness on final repetition..."
               value={notes}
+              disabled={isSubmitting}
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
-          {/* Continue Action Button */}
+          {/* Submit Action Button */}
           <button
             type="submit"
+            disabled={isSubmitting}
             className="btn btn-primary btn-block btn-lg"
           >
-            Continue &rarr;
+            {isSubmitting ? 'Logging Session to Database...' : 'Save & View Summary →'}
           </button>
         </form>
       </Card>

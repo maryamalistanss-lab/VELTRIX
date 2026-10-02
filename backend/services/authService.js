@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 
@@ -83,6 +84,13 @@ const loginUser = async ({ email, password }) => {
  * @returns {Promise<Object>} - Safe user profile
  */
 const getCurrentUser = async (userId) => {
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    const error = new Error("User not found");
+    error.statusCode = 404;
+    error.code = "NOT_FOUND";
+    throw error;
+  }
+
   const user = await User.findById(userId).select("-password");
   if (!user) {
     const error = new Error("User not found");

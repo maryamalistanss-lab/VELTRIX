@@ -8,13 +8,18 @@ const jwt = require("jsonwebtoken");
  * @returns {string} - Signed JWT
  */
 const generateToken = (user) => {
-  const userId = user._id ? user._id.toString() : user.id;
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET environment variable is not defined");
+  }
+
+  const userId = user._id ? user._id.toString() : String(user.id);
+  const role = user.role ? String(user.role).toUpperCase() : "";
 
   const payload = {
     userId,
     sub: userId,
     email: user.email,
-    role: user.role
+    role
   };
 
   return jwt.sign(payload, process.env.JWT_SECRET, {

@@ -16,27 +16,27 @@ const forbiddenResponse = (res, message = "Access denied. You do not have permis
 };
 
 const therapistManagesPatient = async (therapistId, patientId) => {
+  if (!patientId || !isValidObjectId(patientId)) return false;
   const patient = await User.findById(patientId);
   if (!patient || patient.role !== "PATIENT") return false;
 
-  // If patient has assignments, check if assigned by therapist
+  const therapistStr = therapistId.toString();
+
   if (patient.assignedExercises && patient.assignedExercises.length > 0) {
     const hasAssignmentByTherapist = patient.assignedExercises.some(
-      (a) => a.assignedBy && a.assignedBy.toString() === therapistId.toString()
+      (a) => a.assignedBy && (a.assignedBy._id ? a.assignedBy._id.toString() : a.assignedBy.toString()) === therapistStr
     );
     if (hasAssignmentByTherapist) return true;
   }
 
-  // Check if therapist recorded notes for patient
   if (patient.therapistNotes && patient.therapistNotes.length > 0) {
     const hasNoteByTherapist = patient.therapistNotes.some(
-      (n) => n.therapistId && n.therapistId.toString() === therapistId.toString()
+      (n) => n.therapistId && (n.therapistId._id ? n.therapistId._id.toString() : n.therapistId.toString()) === therapistStr
     );
     if (hasNoteByTherapist) return true;
   }
 
-  // If no assignments or notes exist yet, therapist can access patient profile and sessions
-  return true;
+  return false;
 };
 
 const formatSession = (s, exerciseName = null) => {
@@ -330,19 +330,39 @@ const getSessions = async (req, res) => {
     const userRole = (req.user.role || "").toUpperCase();
 
     if (userRole === "PATIENT") {
-      // Patient isolation: strictly restricted to authenticated patient's sessions
       filter.patientId = req.user.id;
     } else {
-      // Therapist role: can query for all managed patients or specific patient if requested
-      if (req.query.patientId && isValidObjectId(req.query.patientId)) {
-        filter.patientId = req.query.patientId;
+      const requestedPatientId = req.query.patientId;
+
+      if (requestedPatientId && isValidObjectId(requestedPatientId)) {
+        const patient = await User.findById(requestedPatientId).select("_id role");
+        if (!patient || patient.role !== "PATIENT") {
+          return res.status(404).json({
+            success: false,
+            message: "Patient ID not found.",
+            error: "NOT_FOUND"
+          });
+        }
+
+        const managesPatient = await therapistManagesPatient(req.user.id, requestedPatientId);
+        if (!managesPatient) {
+          return forbiddenResponse(res, "Access denied. You do not have permission to view this patient's sessions.");
+        }
+
+        filter.patientId = requestedPatientId;
       } else {
         const managedPatients = await User.find({
-          "assignedExercises.assignedBy": req.user.id
+          $or: [
+            { "assignedExercises.assignedBy": req.user.id },
+            { "therapistNotes.therapistId": req.user.id }
+          ]
         }).select("_id");
-        if (managedPatients.length > 0) {
-          filter.patientId = { $in: managedPatients.map((patient) => patient._id) };
+
+        if (managedPatients.length === 0) {
+          return res.status(200).json({ success: true, data: [] });
         }
+
+        filter.patientId = { $in: managedPatients.map((patient) => patient._id) };
       }
     }
 

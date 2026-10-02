@@ -1,9 +1,14 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
+const connectDB = require('./config/db');
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const Exercise = require('./models/Exercise');
 const ExerciseSession = require('./models/ExerciseSession');
 const jwt = require('jsonwebtoken');
+
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'veltrix-dev-secret';
+}
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -12,7 +17,7 @@ const runTests = async () => {
   console.log('VELTRIX INTEGRATION TEST: PHASES 4, 5, 6, 7');
   console.log('==================================================');
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await connectDB();
   console.log('✓ Connected to MongoDB');
 
   // Generate tokens for testing

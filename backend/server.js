@@ -7,6 +7,7 @@ const userRoutes = require("./routes/userRoutes");
 
 const exerciseRoutes = require("./routes/exerciseRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
+const patientRoutes = require("./routes/patientRoutes");
 
 const app = express();
 
@@ -33,6 +34,9 @@ app.use("/api/exercises", exerciseRoutes);
 
 // Exercise Session Routes
 app.use("/api/sessions", sessionRoutes);
+
+// Patient Routes (Progress)
+app.use("/api/patients", patientRoutes);
 
 // 404 Handler
 app.use((req, res) => {

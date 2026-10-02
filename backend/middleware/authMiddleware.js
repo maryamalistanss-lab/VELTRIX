@@ -27,7 +27,8 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId || decoded.sub;
+
+    const userId = decoded.userId || decoded.sub || decoded.id;
     const role = decoded.role ? String(decoded.role).toUpperCase() : null;
 
     if (!userId || !role || !["PATIENT", "THERAPIST"].includes(role)) {

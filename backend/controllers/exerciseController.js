@@ -1,5 +1,27 @@
 const Exercise = require("../models/Exercise");
-const { isValidObjectId, validateExerciseInput } = require("../utils/validators");
+const { isValidObjectId, validateExerciseInput, normalizeExerciseDifficulty } = require("../utils/validators");
+
+const formatExercise = (ex) => ({
+  id: ex._id,
+  name: ex.name,
+  description: ex.description,
+  targetBodyPart: ex.targetBodyPart,
+  difficulty: ex.difficulty,
+  defaultSets: ex.defaultSets,
+  sets: ex.defaultSets,
+  defaultReps: ex.defaultReps,
+  reps: ex.defaultReps,
+  repetitions: ex.defaultReps,
+  defaultDurationSeconds: ex.defaultDurationSeconds,
+  duration: ex.defaultDurationSeconds,
+  instructions: ex.instructions,
+  demonstrationMedia: ex.demonstrationMedia,
+  demonstration: ex.demonstrationMedia,
+  safetyInstructions: ex.safetyInstructions,
+  createdBy: ex.createdBy,
+  createdAt: ex.createdAt,
+  updatedAt: ex.updatedAt
+});
 
 // GET /api/exercises - List Exercise Catalog
 const getExercises = async (req, res) => {
@@ -11,27 +33,12 @@ const getExercises = async (req, res) => {
       filter.targetBodyPart = new RegExp(`^${targetBodyPart.trim()}$`, "i");
     }
     if (difficulty) {
-      filter.difficulty = difficulty.trim().toLowerCase();
+      const normalized = normalizeExerciseDifficulty(difficulty);
+      filter.difficulty = normalized || difficulty.trim().toLowerCase();
     }
 
     const exercises = await Exercise.find(filter).sort({ createdAt: -1 });
-
-    const formattedData = exercises.map((ex) => ({
-      id: ex._id,
-      name: ex.name,
-      description: ex.description,
-      targetBodyPart: ex.targetBodyPart,
-      difficulty: ex.difficulty,
-      defaultSets: ex.defaultSets,
-      defaultReps: ex.defaultReps,
-      defaultDurationSeconds: ex.defaultDurationSeconds,
-      instructions: ex.instructions,
-      demonstrationMedia: ex.demonstrationMedia,
-      safetyInstructions: ex.safetyInstructions,
-      createdBy: ex.createdBy,
-      createdAt: ex.createdAt,
-      updatedAt: ex.updatedAt
-    }));
+    const formattedData = exercises.map(formatExercise);
 
     return res.status(200).json({
       success: true,
@@ -70,22 +77,7 @@ const getExerciseById = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: {
-        id: exercise._id,
-        name: exercise.name,
-        description: exercise.description,
-        targetBodyPart: exercise.targetBodyPart,
-        difficulty: exercise.difficulty,
-        defaultSets: exercise.defaultSets,
-        defaultReps: exercise.defaultReps,
-        defaultDurationSeconds: exercise.defaultDurationSeconds,
-        instructions: exercise.instructions,
-        demonstrationMedia: exercise.demonstrationMedia,
-        safetyInstructions: exercise.safetyInstructions,
-        createdBy: exercise.createdBy,
-        createdAt: exercise.createdAt,
-        updatedAt: exercise.updatedAt
-      }
+      data: formatExercise(exercise)
     });
   } catch (error) {
     return res.status(500).json({
@@ -112,12 +104,16 @@ const createExercise = async (req, res) => {
       name,
       description,
       targetBodyPart,
-      difficulty,
       defaultSets,
+      sets,
       defaultReps,
+      reps,
+      repetitions,
       defaultDurationSeconds,
+      duration,
       instructions,
       demonstrationMedia,
+      demonstration,
       safetyInstructions
     } = req.body;
 
@@ -130,16 +126,21 @@ const createExercise = async (req, res) => {
       });
     }
 
+    const finalSets = defaultSets !== undefined ? defaultSets : sets !== undefined ? sets : null;
+    const finalReps = defaultReps !== undefined ? defaultReps : reps !== undefined ? reps : repetitions !== undefined ? repetitions : null;
+    const finalDuration = defaultDurationSeconds !== undefined ? defaultDurationSeconds : duration !== undefined ? duration : null;
+    const finalDemo = demonstrationMedia !== undefined ? demonstrationMedia : demonstration !== undefined ? demonstration : null;
+
     const newExercise = await Exercise.create({
       name: name.trim(),
       description: description.trim(),
       targetBodyPart: targetBodyPart.trim(),
-      difficulty,
-      defaultSets: defaultSets || null,
-      defaultReps: defaultReps || null,
-      defaultDurationSeconds: defaultDurationSeconds || null,
+      difficulty: validation.normalizedDifficulty,
+      defaultSets: finalSets,
+      defaultReps: finalReps,
+      defaultDurationSeconds: finalDuration,
       instructions,
-      demonstrationMedia: demonstrationMedia || null,
+      demonstrationMedia: finalDemo,
       safetyInstructions: safetyInstructions || null,
       createdBy: req.user.id
     });
@@ -147,22 +148,7 @@ const createExercise = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Exercise created successfully",
-      data: {
-        id: newExercise._id,
-        name: newExercise.name,
-        description: newExercise.description,
-        targetBodyPart: newExercise.targetBodyPart,
-        difficulty: newExercise.difficulty,
-        defaultSets: newExercise.defaultSets,
-        defaultReps: newExercise.defaultReps,
-        defaultDurationSeconds: newExercise.defaultDurationSeconds,
-        instructions: newExercise.instructions,
-        demonstrationMedia: newExercise.demonstrationMedia,
-        safetyInstructions: newExercise.safetyInstructions,
-        createdBy: newExercise.createdBy,
-        createdAt: newExercise.createdAt,
-        updatedAt: newExercise.updatedAt
-      }
+      data: formatExercise(newExercise)
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -215,50 +201,66 @@ const updateExercise = async (req, res) => {
       name,
       description,
       targetBodyPart,
-      difficulty,
       defaultSets,
+      sets,
       defaultReps,
+      reps,
+      repetitions,
       defaultDurationSeconds,
+      duration,
       instructions,
       demonstrationMedia,
+      demonstration,
       safetyInstructions
     } = req.body;
+
+    // Check name conflict with other exercises
+    const existingConflict = await Exercise.findOne({
+      _id: { $ne: id },
+      name: name.trim()
+    });
+    if (existingConflict) {
+      return res.status(400).json({
+        success: false,
+        message: "An exercise with this name already exists.",
+        error: "BAD_REQUEST"
+      });
+    }
 
     exercise.name = name.trim();
     exercise.description = description.trim();
     exercise.targetBodyPart = targetBodyPart.trim();
-    exercise.difficulty = difficulty;
-    exercise.defaultSets = defaultSets !== undefined ? defaultSets : exercise.defaultSets;
-    exercise.defaultReps = defaultReps !== undefined ? defaultReps : exercise.defaultReps;
-    exercise.defaultDurationSeconds =
-      defaultDurationSeconds !== undefined ? defaultDurationSeconds : exercise.defaultDurationSeconds;
+    exercise.difficulty = validation.normalizedDifficulty;
+
+    const finalSets = defaultSets !== undefined ? defaultSets : sets !== undefined ? sets : exercise.defaultSets;
+    const finalReps = defaultReps !== undefined ? defaultReps : reps !== undefined ? reps : repetitions !== undefined ? repetitions : exercise.defaultReps;
+    const finalDuration = defaultDurationSeconds !== undefined ? defaultDurationSeconds : duration !== undefined ? duration : exercise.defaultDurationSeconds;
+    const finalDemo = demonstrationMedia !== undefined ? demonstrationMedia : demonstration !== undefined ? demonstration : exercise.demonstrationMedia;
+
+    exercise.defaultSets = finalSets;
+    exercise.defaultReps = finalReps;
+    exercise.defaultDurationSeconds = finalDuration;
     exercise.instructions = instructions;
-    exercise.demonstrationMedia = demonstrationMedia !== undefined ? demonstrationMedia : exercise.demonstrationMedia;
+    exercise.demonstrationMedia = finalDemo;
     exercise.safetyInstructions = safetyInstructions !== undefined ? safetyInstructions : exercise.safetyInstructions;
+
+    // Notice: exercise.createdBy is intentionally NEVER modified on update to preserve ownership
 
     await exercise.save();
 
     return res.status(200).json({
       success: true,
       message: "Exercise updated successfully",
-      data: {
-        id: exercise._id,
-        name: exercise.name,
-        description: exercise.description,
-        targetBodyPart: exercise.targetBodyPart,
-        difficulty: exercise.difficulty,
-        defaultSets: exercise.defaultSets,
-        defaultReps: exercise.defaultReps,
-        defaultDurationSeconds: exercise.defaultDurationSeconds,
-        instructions: exercise.instructions,
-        demonstrationMedia: exercise.demonstrationMedia,
-        safetyInstructions: exercise.safetyInstructions,
-        createdBy: exercise.createdBy,
-        createdAt: exercise.createdAt,
-        updatedAt: exercise.updatedAt
-      }
+      data: formatExercise(exercise)
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "An exercise with this name already exists.",
+        error: "BAD_REQUEST"
+      });
+    }
     return res.status(500).json({
       success: false,
       message: "Failed to update exercise.",

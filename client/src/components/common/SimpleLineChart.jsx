@@ -1,4 +1,4 @@
-﻿import { useId } from 'react';
+import { useId } from 'react';
 
 /**
  * SimpleLineChart Component
@@ -34,7 +34,9 @@ export default function SimpleLineChart({
   const chartHeight = height - paddingTop - paddingBottom;
 
   const points = data.map((d, i) => {
-    const x = paddingLeft + (i / (data.length - 1)) * chartWidth;
+    const x = data.length > 1
+      ? paddingLeft + (i / (data.length - 1)) * chartWidth
+      : paddingLeft + chartWidth / 2;
     const val = Number(d[yKey]) || 0;
     const normalizedY = (val - yMin) / (yMax - yMin || 1);
     const y = height - paddingBottom - normalizedY * chartHeight;

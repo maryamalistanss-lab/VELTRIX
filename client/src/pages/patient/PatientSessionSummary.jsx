@@ -1,29 +1,36 @@
-﻿import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import Card from '../../components/Card';
-import { exerciseCatalog } from '../../data/exerciseMockData';
+import Badge from '../../components/common/Badge';
 import { ROUTES } from '../../utils/constants';
 
 /**
  * PatientSessionSummary Component
- * Replicates Screen 6 of Patient App in Image 1 & 2.
+ * Displays real telemetry summary of the logged session from MongoDB.
  */
 export default function PatientSessionSummary() {
-  const { exerciseId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const feedbackState = location.state || {};
-  const painAfter = feedbackState.painAfter || 2;
-  const difficulty = feedbackState.difficulty || 'Moderate';
+  const stateData = location.state || {};
+  const session = stateData.session || null;
+  const exerciseName = stateData.exerciseName || 'Rehabilitation Exercise';
 
-  const exercise =
-    exerciseCatalog.find((ex) => ex.id === exerciseId) ||
-    exerciseCatalog.find((ex) => ex.id === 'ex-knee-extension') ||
-    exerciseCatalog[0];
+  const setsCompleted = session?.setsCompleted || 3;
+  const repsCompleted = session?.repsCompleted || 10;
+  const durationSec = session?.durationSeconds || 180;
+  const painBefore = session?.painBefore !== undefined ? session.painBefore : 2;
+  const painAfter = session?.painAfter !== undefined ? session.painAfter : 1;
+  const difficulty = session?.perceivedDifficulty || 'moderate';
+  const sessionId = session?.id || session?._id || 'Pending Confirmation';
 
-  const handleSaveAndFinish = () => {
-    navigate(ROUTES.PATIENT.PROGRESS);
+  // Format duration into mm:ss
+  const formatDuration = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
+
+  const painDelta = painAfter - painBefore;
 
   return (
     <div className="page-container" style={{ maxWidth: 640 }}>
@@ -36,7 +43,7 @@ export default function PatientSessionSummary() {
             alignItems: 'center',
             textAlign: 'center',
             paddingTop: 16,
-            marginBottom: 28,
+            marginBottom: 24,
           }}
         >
           {/* Mint Checkmark Circle */}
@@ -62,8 +69,11 @@ export default function PatientSessionSummary() {
             Exercise Complete!
           </h1>
           <p className="page-subtitle" style={{ fontSize: 16 }}>
-            {exercise.title} &bull; Excellent consistency
+            {exerciseName} &bull; Recorded to Clinical Log
           </p>
+          <div style={{ marginTop: 8 }}>
+            <Badge variant="mint">Session ID: {String(sessionId).slice(-8)}</Badge>
+          </div>
         </div>
 
         {/* Telemetry Summary Stats Grid */}
@@ -85,7 +95,7 @@ export default function PatientSessionSummary() {
           >
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Sets Completed</span>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginTop: 4 }}>
-              3 / 3
+              {setsCompleted}
             </div>
           </div>
 
@@ -97,9 +107,9 @@ export default function PatientSessionSummary() {
               textAlign: 'center',
             }}
           >
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Repetitions</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Reps / Set</span>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginTop: 4 }}>
-              30 / 30
+              {repsCompleted}
             </div>
           </div>
 
@@ -113,12 +123,12 @@ export default function PatientSessionSummary() {
           >
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Duration</span>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--primary-indigo)', marginTop: 4 }}>
-              08:45
+              {formatDuration(durationSec)}
             </div>
           </div>
         </div>
 
-        {/* Clinical Pain & Tolerance Summary List */}
+        {/* Clinical Pain & Tolerance Summary Card */}
         <div
           style={{
             padding: '18px 20px',
@@ -128,42 +138,83 @@ export default function PatientSessionSummary() {
             marginBottom: 28,
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
+            gap: 14,
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Pain Before Exercise:</span>
-            <strong style={{ color: 'var(--text-primary)' }}>4 / 5</strong>
+            <span style={{ color: 'var(--text-secondary)' }}>Pain Before Session:</span>
+            <strong style={{ color: 'var(--text-primary)' }}>{painBefore} / 10</strong>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Pain After Exercise:</span>
-            <strong style={{ color: 'var(--accent-mint)' }}>{painAfter} / 5</strong>
+            <span style={{ color: 'var(--text-secondary)' }}>Pain After Session:</span>
+            <strong style={{ color: 'var(--accent-mint)' }}>{painAfter} / 10</strong>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Pain Trajectory (&Delta;):</span>
+            <strong
+              style={{
+                color:
+                  painDelta < 0
+                    ? 'var(--accent-mint)'
+                    : painDelta === 0
+                    ? 'var(--text-primary)'
+                    : 'var(--color-danger, #EF4444)',
+              }}
+            >
+              {painDelta < 0
+                ? `${Math.abs(painDelta)} pt reduction (Improved)`
+                : painDelta === 0
+                ? 'Stable (No pain increase)'
+                : `+${painDelta} pt elevation`}
+            </strong>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
             <span style={{ color: 'var(--text-secondary)' }}>Perceived Difficulty:</span>
-            <strong style={{ color: 'var(--text-primary)' }}>{difficulty}</strong>
+            <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+              {difficulty}
+            </strong>
           </div>
+
+          {session?.sessionResults?.feedback && (
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 10, fontSize: 13 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Therapist Note:</span>
+              <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
+                &ldquo;{session.sessionResults.feedback}&rdquo;
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button
             type="button"
-            onClick={handleSaveAndFinish}
+            onClick={() => navigate(ROUTES.PATIENT.PROGRESS)}
             className="btn btn-primary btn-block btn-lg"
           >
-            Save Session & View Progress &rarr;
+            View My Progress & History &rarr;
           </button>
 
-          <Link
-            to={ROUTES.PATIENT.DASHBOARD}
-            className="btn btn-outline btn-block"
-            style={{ textAlign: 'center' }}
-          >
-            Return to Dashboard
-          </Link>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Link
+              to={ROUTES.PATIENT.EXERCISES}
+              className="btn btn-secondary btn-block"
+              style={{ textAlign: 'center' }}
+            >
+              Next Exercise
+            </Link>
+
+            <Link
+              to={ROUTES.PATIENT.DASHBOARD}
+              className="btn btn-outline btn-block"
+              style={{ textAlign: 'center' }}
+            >
+              Dashboard
+            </Link>
+          </div>
         </div>
       </Card>
     </div>

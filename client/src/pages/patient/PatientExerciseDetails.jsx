@@ -4,6 +4,7 @@ import Card from '../../components/Card';
 import Badge from '../../components/common/Badge';
 import api from '../../services/api';
 import { ROUTES } from '../../utils/constants';
+import { getExerciseCameraConfig } from '../../utils/camera/poseDetectorConfig';
 
 /**
  * PatientExerciseDetails Component
@@ -285,17 +286,41 @@ export default function PatientExerciseDetails() {
           </div>
         )}
 
-        {/* Action Button: Start Guided Mode */}
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 20 }}>
-          <button
-            type="button"
-            onClick={() => navigate(`/patient/exercises/${exercise.id || exercise._id}/guided`)}
-            className="btn btn-primary btn-block btn-lg"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-          >
-            <span>🧭</span>
-            <span>Start Guided Mode &rarr;</span>
-          </button>
+        {/* Action Buttons: Guided Mode & Camera Mode Beta */}
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {getExerciseCameraConfig(exercise).isSupported ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => navigate(`/patient/exercises/${exercise.id || exercise._id}/guided`, { state: { mode: 'guided' } })}
+                className="btn btn-outline btn-lg"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                <span>🧭</span>
+                <span>Guided Pacing</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate(`/patient/exercises/${exercise.id || exercise._id}/guided`, { state: { mode: 'camera' } })}
+                className="btn btn-primary btn-lg"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                <span>📷</span>
+                <span>Camera Mode (Beta)</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate(`/patient/exercises/${exercise.id || exercise._id}/guided`)}
+              className="btn btn-primary btn-block btn-lg"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+            >
+              <span>🧭</span>
+              <span>Start Guided Mode &rarr;</span>
+            </button>
+          )}
         </div>
       </Card>
     </div>

@@ -108,6 +108,12 @@ const runTests = async () => {
     role: "PATIENT"
   });
 
+  patientA.therapistNotes.push({
+    therapistId: therapistA._id,
+    note: "Test relationship for therapist access coverage"
+  });
+  await patientA.save();
+
   const patientB = await User.create({
     name: "Patient B",
     email: `patientB_${timestamp}@test.com`,
@@ -130,6 +136,142 @@ const runTests = async () => {
 
   let createdExercise1;
   let createdSession1;
+  console.log("\n--- GROUP 0: Registration & Login Authentication ---");
+
+  await test("0. User registration hashes password and returns safe profile", async () => {
+    const email = `auth_${timestamp}@test.com`;
+    const res = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Auth Test User",
+        email,
+        password: "Password123!",
+        role: "PATIENT"
+      })
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.data.success, true);
+    assert.ok(res.data.data.id);
+    assert.strictEqual(res.data.data.email, email);
+    assert.strictEqual(res.data.data.role, "PATIENT");
+    assert.strictEqual(res.data.data.password, undefined);
+
+    const user = await User.findById(res.data.data.id).select("+password");
+    assert.ok(user);
+    assert.notStrictEqual(user.password, "Password123!");
+  });
+
+  await test("0. Duplicate registration is rejected with 409", async () => {
+    const email = `duplicate_${timestamp}@test.com`;
+
+    const first = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Duplicate Test User",
+        email,
+        password: "Password123!",
+        role: "PATIENT"
+      })
+    });
+
+    assert.strictEqual(first.status, 201);
+
+    const second = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Duplicate Test User",
+        email,
+        password: "Password123!",
+        role: "PATIENT"
+      })
+    });
+
+    assert.strictEqual(second.status, 409);
+    assert.strictEqual(second.data.error, "CONFLICT");
+  });
+
+  await test("0. Login returns JWT and safe user profile", async () => {
+    const email = `login_${timestamp}@test.com`;
+
+    const registered = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Login Test User",
+        email,
+        password: "Password123!",
+        role: "PATIENT"
+      })
+    });
+
+    assert.strictEqual(registered.status, 201);
+
+    const res = await request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        password: "Password123!"
+      })
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.data.success, true);
+    assert.ok(res.data.data.token);
+    assert.strictEqual(res.data.data.user.email, email);
+    assert.strictEqual(res.data.data.user.role, "PATIENT");
+    assert.strictEqual(res.data.data.user.password, undefined);
+  });
+
+  await test("0. Invalid login credentials are rejected with 401", async () => {
+    const res = await request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: `login_${timestamp}@test.com`,
+        password: "WrongPassword123!"
+      })
+    });
+
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.data.error, "UNAUTHORIZED");
+  });
+
+  await test("0. /api/auth/me returns the JWT-authenticated user", async () => {
+    const email = `me_${timestamp}@test.com`;
+
+    const registered = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Me Test User",
+        email,
+        password: "Password123!",
+        role: "PATIENT"
+      })
+    });
+
+    assert.strictEqual(registered.status, 201);
+
+    const login = await request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        password: "Password123!"
+      })
+    });
+
+    assert.strictEqual(login.status, 200);
+
+    const res = await request("/api/auth/me", {
+      headers: {
+        Authorization: `Bearer ${login.data.data.token}`
+      }
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.data.success, true);
+    assert.strictEqual(res.data.data.email, email);
+    assert.strictEqual(res.data.data.role, "PATIENT");
+    assert.strictEqual(res.data.data.password, undefined);
+  });
 
   console.log("\n--- GROUP 1: Health & Authentication Boundaries ---");
 

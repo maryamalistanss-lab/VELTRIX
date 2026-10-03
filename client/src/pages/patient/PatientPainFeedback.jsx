@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import Card from '../../components/Card';
 import PainScaleSelector from '../../components/common/PainScaleSelector';
-import api from '../../services/api';
+import sessionService from '../../services/sessionService';
 
 /**
  * PatientPainFeedback Component
@@ -33,6 +33,7 @@ export default function PatientPainFeedback() {
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    const notesText = notes.trim() || null;
     const payload = {
       exerciseId: sessionState.exerciseId || exerciseId,
       setsCompleted: Number(setsCompleted),
@@ -41,16 +42,17 @@ export default function PatientPainFeedback() {
       painBefore: Number(painBefore),
       painAfter: Number(painAfter),
       perceivedDifficulty: difficulty, // 'easy' | 'moderate' | 'hard'
+      notes: notesText, // Top-level notes field per backend ExerciseSession model
       sessionResults: {
-        feedback: notes.trim() || undefined,
+        feedback: notesText || undefined, // Also stored in sessionResults.feedback for summary display
       },
     };
 
     try {
-      const response = await api.post('/sessions', payload);
+      const responseData = await sessionService.createSession(payload);
 
-      if (response.data && response.data.success && response.data.data) {
-        const savedSession = response.data.data;
+      if (responseData && responseData.success && responseData.data) {
+        const savedSession = responseData.data;
         navigate(`/patient/exercises/${exerciseId}/summary`, {
           state: {
             session: savedSession,
@@ -58,14 +60,17 @@ export default function PatientPainFeedback() {
           },
         });
       } else {
-        setErrorMessage(response.data?.message || 'Failed to save exercise session.');
+        setErrorMessage(responseData?.message || 'Failed to save exercise session.');
         setIsSubmitting(false);
       }
     } catch (err) {
       console.error('Session logging error:', err);
+      // 401 errors are handled globally by the API interceptor (auto-redirect to login)
       const msg =
         err.response?.data?.message ||
-        'Unable to submit exercise session. Please verify your connection and try again.';
+        (err.response?.status === 404
+          ? 'The referenced exercise no longer exists. Please select a valid exercise.'
+          : 'Unable to submit exercise session. Please verify your connection and try again.');
       setErrorMessage(msg);
       setIsSubmitting(false);
     }

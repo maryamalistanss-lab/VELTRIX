@@ -8,11 +8,32 @@ import api from './api';
 
 export const sessionService = {
   /**
+   * Create / log a completed exercise session (Patient only).
+   * patientId is derived by the backend from the authenticated JWT token.
+   * @param {Object} sessionData - { exerciseId, setsCompleted, repsCompleted, durationSeconds,
+   *                                 painBefore, painAfter, perceivedDifficulty, notes, sessionResults }
+   */
+  async createSession(sessionData) {
+    const response = await api.post('/sessions', sessionData);
+    return response.data;
+  },
+
+  /**
    * Get exercise sessions history (filtered by user role).
+   * For PATIENT role, the backend automatically filters by the authenticated patient's ID.
    * @param {Object} params - { limit, startDate }
    */
   async getSessions(params = {}) {
     const response = await api.get('/sessions', { params });
+    return response.data;
+  },
+
+  /**
+   * Get patient's own progress analytics (Patient only).
+   * Returns aggregated stats calculated from real ExerciseSession records.
+   */
+  async getMyProgress() {
+    const response = await api.get('/sessions/progress');
     return response.data;
   },
 

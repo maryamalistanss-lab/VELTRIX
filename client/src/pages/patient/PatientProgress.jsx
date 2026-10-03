@@ -46,7 +46,8 @@ export default function PatientProgress() {
 
       setSessions(sessionList);
       setExercisesMap(exMap);
-      setTotalCatalogCount(exerciseList.length || 9);
+      // Use real catalog count; 0 means no exercises loaded (no fake fallback)
+      setTotalCatalogCount(exerciseList.length);
     } catch (err) {
       console.error('Failed to load patient progress:', err);
       setError(
@@ -58,54 +59,10 @@ export default function PatientProgress() {
     }
   }, []);
 
+  // Load progress data on mount using fetchData
   useEffect(() => {
-    let isMounted = true;
-    async function loadInitialProgress() {
-      try {
-        const [sessionsRes, exercisesRes] = await Promise.all([
-          api.get('/sessions'),
-          api.get('/exercises').catch(() => ({ data: { data: [] } })),
-        ]);
-
-        if (isMounted) {
-          const sessionList = (sessionsRes.data && sessionsRes.data.success && Array.isArray(sessionsRes.data.data))
-            ? sessionsRes.data.data
-            : [];
-
-          const exerciseList = (exercisesRes.data && exercisesRes.data.success && Array.isArray(exercisesRes.data.data))
-            ? exercisesRes.data.data
-            : [];
-
-          const exMap = {};
-          exerciseList.forEach((ex) => {
-            const id = ex.id || ex._id;
-            if (id) {
-              exMap[id] = ex;
-            }
-          });
-
-          setSessions(sessionList);
-          setExercisesMap(exMap);
-          setTotalCatalogCount(exerciseList.length || 9);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.error('Failed to load patient progress:', err);
-          setError(
-            err.response?.data?.message ||
-            'Unable to load your progress records. Please check your connection and try again.'
-          );
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadInitialProgress();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   // Derived statistics
   const metrics = useMemo(() => {

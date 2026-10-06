@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1E293B" />
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#4F46E5" />
+    </linearGradient>
+    <linearGradient id="mintGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="400" fill="url(#bgGrad)" rx="16" />
+
+  <!-- Floor Grid -->
+  <line x1="60" y1="340" x2="540" y2="340" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+  <line x1="60" y1="341" x2="540" y2="341" stroke="#475569" stroke-width="3" />
+
+  <!-- Header Banner -->
+  <g transform="translate(30, 24)">
+    <rect width="200" height="32" rx="16" fill="rgba(99, 102, 241, 0.2)" stroke="#6366F1" stroke-width="1" />
+    <circle cx="16" cy="16" r="6" fill="#10B981" />
+    <text x="32" y="21" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Arm Raise Demonstration</text>
+  </g>
+
+  <!-- Side Indicator / Specs -->
+  <g transform="translate(420, 30)">
+    <rect width="150" height="90" rx="10" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <text x="14" y="24" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="11" font-weight="600">TARGET REGION</text>
+    <text x="14" y="44" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Shoulders &amp; Deltoid</text>
+    <text x="14" y="64" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="11" font-weight="600">MOTION RANGE</text>
+    <text x="14" y="80" fill="#10B981" font-family="system-ui, sans-serif" font-size="13" font-weight="700">0° &#8594; 90° Flexion</text>
+  </g>
+
+  <!-- Standing Figure -->
+  <!-- Head -->
+  <circle cx="260" cy="100" r="22" fill="#E2E8F0" filter="url(#shadow)" />
+  <circle cx="260" cy="100" r="22" stroke="#6366F1" stroke-width="3" fill="none" />
+
+  <!-- Neck -->
+  <line x1="260" y1="122" x2="260" y2="135" stroke="#CBD5E1" stroke-width="8" stroke-linecap="round" />
+
+  <!-- Torso (Upright) -->
+  <line x1="260" y1="135" x2="260" y2="235" stroke="url(#primaryGrad)" stroke-width="18" stroke-linecap="round" />
+
+  <!-- Legs -->
+  <line x1="260" y1="235" x2="255" y2="335" stroke="url(#primaryGrad)" stroke-width="16" stroke-linecap="round" />
+
+  <!-- Feet -->
+  <path d="M 245 338 L 275 338" stroke="#E2E8F0" stroke-width="10" stroke-linecap="round" />
+
+  <!-- Shoulder Joint Marker -->
+  <circle cx="260" cy="148" r="10" fill="#10B981" />
+  <circle cx="260" cy="148" r="4" fill="#FFFFFF" />
+
+  <!-- Starting Position (Dotted arm resting at side) -->
+  <line x1="260" y1="148" x2="260" y2="235" stroke="#64748B" stroke-width="6" stroke-linecap="round" stroke-dasharray="4 4" />
+  <text x="210" y="200" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="11" font-weight="600">Start (0°)</text>
+
+  <!-- Active Position (Elevated arm forward at 90 degrees) -->
+  <line x1="260" y1="148" x2="375" y2="148" stroke="#60A5FA" stroke-width="12" stroke-linecap="round" />
+  <circle cx="375" cy="148" r="7" fill="#60A5FA" />
+
+  <!-- Elevation Motion Arc -->
+  <path d="M 285 220 A 70 70 0 0 0 330 155" fill="none" stroke="#F59E0B" stroke-width="3.5" stroke-dasharray="5 3" />
+  <!-- Arrow Head -->
+  <polygon points="330,147 335,160 324,157" fill="#F59E0B" />
+
+  <!-- 90 Degree Angle Arc -->
+  <path d="M 260 178 A 30 30 0 0 0 290 148" fill="none" stroke="#10B981" stroke-width="2.5" />
+  <text x="296" y="172" fill="#10B981" font-family="system-ui, sans-serif" font-size="12" font-weight="700">90°</text>
+
+  <!-- Posture Cue Labels -->
+  <g transform="translate(100, 160)">
+    <line x1="120" y1="0" x2="70" y2="0" stroke="#64748B" stroke-width="1" />
+    <circle cx="120" cy="0" r="3" fill="#64748B" />
+    <rect x="-10" y="-14" width="75" height="26" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <text x="27" y="3" text-anchor="middle" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="11" font-weight="600">Neutral Back</text>
+  </g>
+
+  <!-- Target Plane Indicator -->
+  <line x1="260" y1="148" x2="420" y2="148" stroke="#6366F1" stroke-width="1.5" stroke-dasharray="4 4" />
+  <rect x="385" y="136" width="105" height="24" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1" />
+  <text x="437" y="152" text-anchor="middle" fill="#93C5FD" font-family="system-ui, sans-serif" font-size="11" font-weight="600">Shoulder Plane</text>
+</svg>

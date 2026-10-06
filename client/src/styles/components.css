@@ -255,6 +255,24 @@
   font-size: 14px;
 }
 
+/* Light / White Card Surface Text Contrast Protection
+   Ensures secondary/muted text has sufficient contrast when displayed on light or white card surfaces,
+   even if Dark Mode data-theme='dark' is active on the root document. */
+.card[style*="background: #fff"],
+.card[style*="background: rgb(255, 255, 255)"],
+.card[style*="background:#fff"],
+.card[style*="background: white"],
+.card[style*="background:#ffffff"],
+.card[style*="background: #ffffff"],
+.card-light,
+.surface-light,
+[data-surface="light"] {
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  color: var(--text-primary);
+}
+
 .card-actions {
   display: flex;
   align-items: center;

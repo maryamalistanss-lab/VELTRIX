@@ -25,57 +25,75 @@ const seedDefaultExercises = async () => {
 
     const defaultExercises = [
       {
+        name: "Squat",
+        description: "Functional bilateral lower extremity strengthening and pelvic stability drill for hips, knees, and glutes.",
+        targetBodyPart: "Legs",
+        difficulty: "intermediate",
+        defaultSets: 3,
+        defaultReps: 15,
+        defaultDurationSeconds: 480,
+        instructions: [
+          "Stand tall with your feet shoulder-width apart, toes pointing slightly outward.",
+          "Hinge at your hips and bend your knees as if sitting back into an imaginary chair.",
+          "Keep your chest upright and ensure your knees track in line with your toes.",
+          "Drive through your heels to return to a full standing posture."
+        ],
+        demonstrationMedia: "/images/exercises/squat.svg",
+        safetyInstructions: "Do not let your knees cave inward or extend excessively past your toes.",
+        createdBy: therapist._id
+      },
+      {
+        name: "Arm Raise",
+        description: "Gentle forward shoulder flexion to restore range of motion, improve circulation, and prevent impingement.",
+        targetBodyPart: "Shoulders",
+        difficulty: "beginner",
+        defaultSets: 3,
+        defaultReps: 10,
+        defaultDurationSeconds: 300,
+        instructions: [
+          "Stand tall with feet shoulder-width apart and arms relaxed at your sides.",
+          "Slowly raise both arms forward and up toward shoulder height.",
+          "Hold the elevated position steadily for 2 seconds.",
+          "Lower your arms back down with controlled cadence."
+        ],
+        demonstrationMedia: "/images/exercises/arm-raise.svg",
+        safetyInstructions: "Do not arch your lower back or shrug your shoulders during the lift.",
+        createdBy: therapist._id
+      },
+      {
         name: "Seated Knee Extension",
-        description: "Strengthens the quadriceps for knee stability and range of motion.",
+        description: "Open-chain quadriceps strengthening focusing on terminal knee extension and joint stability.",
         targetBodyPart: "Knee",
         difficulty: "beginner",
         defaultSets: 3,
         defaultReps: 10,
         defaultDurationSeconds: 360,
         instructions: [
-          "Sit upright on a chair with your back straight.",
-          "Extend the affected leg until straight.",
-          "Hold for two seconds before lowering.",
-          "Repeat gently and keep movement controlled."
+          "Sit upright on a sturdy chair with your back straight and knees bent at 90 degrees.",
+          "Slowly extend your affected leg straight out until horizontal with the floor.",
+          "Hold for 2 seconds at peak contraction, engaging your quadriceps.",
+          "Return to the starting seated position in a smooth, controlled motion."
         ],
-        demonstrationMedia: "https://example.com/knee-extension.mp4",
-        safetyInstructions: "Stop if you feel sharp pain.",
+        demonstrationMedia: "/images/exercises/seated-knee-extension.svg",
+        safetyInstructions: "Stop immediately if you experience sharp knee joint pain or swelling.",
         createdBy: therapist._id
       },
       {
-        name: "Arm Raise",
-        description: "Improves shoulder motion and range of motion with controlled elevation.",
-        targetBodyPart: "Shoulders",
+        name: "Wall Push-Ups",
+        description: "Closed-kinetic chain exercise for gentle pectoral, anterior deltoid, and scapular stabilizer re-education.",
+        targetBodyPart: "Chest",
         difficulty: "beginner",
         defaultSets: 3,
-        defaultReps: 10,
-        defaultDurationSeconds: 300,
+        defaultReps: 12,
+        defaultDurationSeconds: 360,
         instructions: [
-          "Stand tall with arms relaxed at your sides.",
-          "Raise both arms forward to shoulder height.",
-          "Pause briefly at the top of the movement.",
-          "Lower the arms slowly and repeat."
+          "Stand facing a wall approximately arm-length away.",
+          "Place your palms flat against the wall at shoulder height and width.",
+          "Slowly bend your elbows to bring your chest smoothly toward the wall.",
+          "Push firmly through your palms to return to the starting position."
         ],
-        demonstrationMedia: "https://example.com/arm-raise.mp4",
-        safetyInstructions: "Keep your back tall and avoid shrugging the shoulders.",
-        createdBy: therapist._id
-      },
-      {
-        name: "Shoulder Stretch",
-        description: "Gentle stretch to improve shoulder mobility and reduce stiffness.",
-        targetBodyPart: "Shoulders",
-        difficulty: "beginner",
-        defaultSets: 3,
-        defaultReps: 10,
-        defaultDurationSeconds: 300,
-        instructions: [
-          "Sit or stand with your shoulders relaxed.",
-          "Bring one arm across your chest.",
-          "Use your other hand to guide it gently closer.",
-          "Hold for 30 seconds before switching sides."
-        ],
-        demonstrationMedia: "https://example.com/shoulder-stretch.mp4",
-        safetyInstructions: "Do not pull into pain or force the range.",
+        demonstrationMedia: "/images/exercises/wall-push-ups.svg",
+        safetyInstructions: "Maintain a neutral spine and avoid sagging your hips.",
         createdBy: therapist._id
       }
     ];

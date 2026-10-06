@@ -1,4 +1,4 @@
-﻿import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import VeltrixBrand from '../brand/VeltrixBrand';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../utils/constants';
@@ -43,7 +43,7 @@ export default function PatientSidebar({ isOpen = false, onClose }) {
       ),
     },
     {
-      to: '/patient/sessions',
+      to: ROUTES.PATIENT.SESSIONS,
       label: 'Sessions',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -55,7 +55,7 @@ export default function PatientSidebar({ isOpen = false, onClose }) {
       ),
     },
     {
-      to: '/patient/pain-history',
+      to: ROUTES.PATIENT.PAIN_HISTORY,
       label: 'Pain History',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -64,7 +64,7 @@ export default function PatientSidebar({ isOpen = false, onClose }) {
       ),
     },
     {
-      to: '/patient/messages',
+      to: ROUTES.PATIENT.MESSAGES,
       label: 'Messages',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -73,7 +73,7 @@ export default function PatientSidebar({ isOpen = false, onClose }) {
       ),
     },
     {
-      to: '/patient/profile',
+      to: ROUTES.PATIENT.PROFILE,
       label: 'Profile',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -83,7 +83,7 @@ export default function PatientSidebar({ isOpen = false, onClose }) {
       ),
     },
     {
-      to: '/patient/settings',
+      to: ROUTES.PATIENT.SETTINGS,
       label: 'Settings',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

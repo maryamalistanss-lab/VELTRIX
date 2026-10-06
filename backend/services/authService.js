@@ -48,7 +48,7 @@ const registerUser = async ({ name, email, password, role }) => {
 const loginUser = async ({ email, password }) => {
   const normalizedEmail = email.trim().toLowerCase();
 
-  const user = await User.findOne({ email: normalizedEmail });
+  const user = await User.findOne({ email: normalizedEmail }).populate("assignedExercises.assignedBy", "name email");
   if (!user) {
     const error = new Error("Invalid email or password");
     error.statusCode = 401;
@@ -66,13 +66,26 @@ const loginUser = async ({ email, password }) => {
 
   const token = generateToken(user);
 
+  let assignedTherapist = null;
+  if (user.role === "PATIENT" && user.assignedExercises?.length > 0) {
+    const firstAssigned = user.assignedExercises.find((a) => a.assignedBy && (typeof a.assignedBy === 'object' && a.assignedBy.name));
+    if (firstAssigned && firstAssigned.assignedBy) {
+      assignedTherapist = {
+        id: (firstAssigned.assignedBy._id || firstAssigned.assignedBy.id).toString(),
+        name: firstAssigned.assignedBy.name,
+        email: firstAssigned.assignedBy.email
+      };
+    }
+  }
+
   return {
     token,
     user: {
       id: user._id.toString(),
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      assignedTherapist
     }
   };
 };
@@ -91,7 +104,9 @@ const getCurrentUser = async (userId) => {
     throw error;
   }
 
-  const user = await User.findById(userId).select("-password");
+  const user = await User.findById(userId)
+    .select("-password")
+    .populate("assignedExercises.assignedBy", "name email");
   if (!user) {
     const error = new Error("User not found");
     error.statusCode = 404;
@@ -99,11 +114,24 @@ const getCurrentUser = async (userId) => {
     throw error;
   }
 
+  let assignedTherapist = null;
+  if (user.role === "PATIENT" && user.assignedExercises?.length > 0) {
+    const firstAssigned = user.assignedExercises.find((a) => a.assignedBy && (typeof a.assignedBy === 'object' && a.assignedBy.name));
+    if (firstAssigned && firstAssigned.assignedBy) {
+      assignedTherapist = {
+        id: (firstAssigned.assignedBy._id || firstAssigned.assignedBy.id).toString(),
+        name: firstAssigned.assignedBy.name,
+        email: firstAssigned.assignedBy.email
+      };
+    }
+  }
+
   return {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
-    role: user.role
+    role: user.role,
+    assignedTherapist
   };
 };
 

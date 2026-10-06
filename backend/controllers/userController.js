@@ -12,7 +12,9 @@ const getMe = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userId)
+      .select("-password")
+      .populate("assignedExercises.assignedBy", "name email");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -30,19 +32,32 @@ const getMe = async (req, res) => {
     };
 
     if (user.role === "PATIENT") {
-      responseData.assignedExercises = (user.assignedExercises || []).map((a) => ({
-        id: a._id.toString(),
-        exerciseId: a.exerciseId ? a.exerciseId.toString() : null,
-        assignedBy: a.assignedBy ? a.assignedBy.toString() : null,
-        assignedAt: a.assignedAt,
-        dueDate: a.dueDate,
-        targetSets: a.targetSets,
-        targetReps: a.targetReps,
-        targetDurationSeconds: a.targetDurationSeconds,
-        frequency: a.frequency,
-        status: a.status,
-        therapistNotes: a.therapistNotes
-      }));
+      let assignedTherapist = null;
+      responseData.assignedExercises = (user.assignedExercises || []).map((a) => {
+        if (!assignedTherapist && a.assignedBy) {
+          if (typeof a.assignedBy === "object" && a.assignedBy.name) {
+            assignedTherapist = {
+              id: (a.assignedBy._id || a.assignedBy.id).toString(),
+              name: a.assignedBy.name,
+              email: a.assignedBy.email
+            };
+          }
+        }
+        return {
+          id: a._id.toString(),
+          exerciseId: a.exerciseId ? a.exerciseId.toString() : null,
+          assignedBy: a.assignedBy ? (a.assignedBy._id ? a.assignedBy._id.toString() : a.assignedBy.toString()) : null,
+          assignedAt: a.assignedAt,
+          dueDate: a.dueDate,
+          targetSets: a.targetSets,
+          targetReps: a.targetReps,
+          targetDurationSeconds: a.targetDurationSeconds,
+          frequency: a.frequency,
+          status: a.status,
+          therapistNotes: a.therapistNotes
+        };
+      });
+      responseData.assignedTherapist = assignedTherapist;
     }
 
     return res.status(200).json({

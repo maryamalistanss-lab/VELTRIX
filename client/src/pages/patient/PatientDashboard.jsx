@@ -16,15 +16,17 @@ export default function PatientDashboard() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
+  const [assignedTherapist, setAssignedTherapist] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     async function loadDashboard() {
       try {
-        const [sessionsRes, exercisesRes] = await Promise.all([
+        const [sessionsRes, exercisesRes, meRes] = await Promise.all([
           api.get('/sessions').catch(() => ({ data: { data: [] } })),
           api.get('/exercises').catch(() => ({ data: { data: [] } })),
+          api.get('/users/me').catch(() => ({ data: { success: false } })),
         ]);
 
         if (isMounted) {
@@ -38,6 +40,12 @@ export default function PatientDashboard() {
 
           setSessions(sessionList);
           setExercises(exerciseList);
+
+          // Extract assigned therapist from /api/users/me response
+          if (meRes.data?.success && meRes.data?.data?.assignedTherapist) {
+            setAssignedTherapist(meRes.data.data.assignedTherapist);
+          }
+
           setIsLoading(false);
         }
       } catch (err) {
@@ -343,6 +351,51 @@ export default function PatientDashboard() {
                 &ldquo;Focus on slow, controlled pacing and smooth alignment. Consistency and proper posture are the keys to long-term joint rehabilitation.&rdquo;
               </p>
             </div>
+          </Card>
+
+          {/* Assigned Clinical Therapist Card */}
+          <Card
+            title="Assigned Therapist"
+            subtitle="Your supervising physiotherapist"
+          >
+            {assignedTherapist ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-elevated)', border: '1px solid var(--border-color)' }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 'var(--radius-full)',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: 'var(--accent-mint)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 22,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  👨‍⚕️
+                </div>
+                <div>
+                  <h3 style={{ margin: '0 0 2px 0', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {assignedTherapist.name}
+                  </h3>
+                  {assignedTherapist.email && (
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+                      {assignedTherapist.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px 10px' }}>
+                <span style={{ fontSize: 28, display: 'block', marginBottom: 8 }}>🏥</span>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
+                  Your rehabilitation is supervised by our licensed clinical care team.
+                </p>
+              </div>
+            )}
           </Card>
 
           {/* Next Exercise Card (Featured highlight banner) */}

@@ -161,7 +161,8 @@ export default function PatientExerciseDetails() {
         <div
           style={{
             width: '100%',
-            height: 240,
+            minHeight: 240,
+            maxHeight: 360,
             borderRadius: 'var(--radius-lg)',
             background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
             border: '1px solid var(--border-color)',
@@ -174,19 +175,56 @@ export default function PatientExerciseDetails() {
             overflow: 'hidden',
           }}
         >
-          {/* Posture demonstration graphic */}
-          <div style={{ fontSize: 64, marginBottom: 8 }}>🧘‍♂️🦵</div>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--primary-indigo)' }}>
-            {exerciseTitle} Visual Guide
-          </span>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            Controlled cadence &bull; Proper clinical alignment
-          </span>
-          {exercise.demonstrationMedia && (
-            <span style={{ fontSize: 11, color: 'var(--accent-mint)', marginTop: 6, fontWeight: 600 }}>
-              ✓ Demonstration Reference: {exercise.demonstrationMedia}
-            </span>
-          )}
+          {(() => {
+            const demoSrc =
+              exercise.demonstrationMedia ||
+              exercise.demonstration ||
+              (() => {
+                const norm = (exercise.name || exercise.title || '').toLowerCase();
+                if (norm.includes('squat')) return '/images/exercises/squat.svg';
+                if (norm.includes('arm')) return '/images/exercises/arm-raise.svg';
+                if (norm.includes('knee') || norm.includes('extension')) return '/images/exercises/seated-knee-extension.svg';
+                if (norm.includes('push')) return '/images/exercises/wall-push-ups.svg';
+                return null;
+              })();
+
+            if (demoSrc) {
+              return (
+                <img
+                  src={demoSrc}
+                  alt={`${exerciseTitle} demonstration`}
+                  style={{
+                    width: '100%',
+                    maxHeight: 360,
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    const norm = (exercise.name || exercise.title || '').toLowerCase();
+                    let fallback = '/images/exercises/squat.svg';
+                    if (norm.includes('arm')) fallback = '/images/exercises/arm-raise.svg';
+                    else if (norm.includes('knee') || norm.includes('extension')) fallback = '/images/exercises/seated-knee-extension.svg';
+                    else if (norm.includes('push')) fallback = '/images/exercises/wall-push-ups.svg';
+                    if (e.target.src !== window.location.origin + fallback) {
+                      e.target.src = fallback;
+                    }
+                  }}
+                />
+              );
+            }
+
+            return (
+              <>
+                <div style={{ fontSize: 64, marginBottom: 8 }}>🧘‍♂️🦵</div>
+                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--primary-indigo)' }}>
+                  {exerciseTitle} Visual Guide
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+                  Controlled cadence &bull; Proper clinical alignment
+                </span>
+              </>
+            );
+          })()}
         </div>
 
         {/* Prescription Parameters Bar */}

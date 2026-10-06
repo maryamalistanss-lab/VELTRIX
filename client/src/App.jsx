@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layouts
@@ -22,6 +22,9 @@ import PatientExerciseSession from './pages/patient/PatientExerciseSession';
 import PatientPainFeedback from './pages/patient/PatientPainFeedback';
 import PatientSessionSummary from './pages/patient/PatientSessionSummary';
 import PatientProgress from './pages/patient/PatientProgress';
+import PatientMessages from './pages/patient/PatientMessages';
+import PatientProfile from './pages/patient/PatientProfile';
+import PatientSettings from './pages/patient/PatientSettings';
 
 // Therapist Pages (6 Screens)
 import TherapistDashboard from './pages/therapist/TherapistDashboard';
@@ -109,12 +112,13 @@ function App() {
             {/* Screen 7: My Progress */}
             <Route path="progress" element={<PatientProgress />} />
 
-            {/* Secondary navigation fallbacks */}
+            {/* Secondary patient navigation pages */}
             <Route path="sessions" element={<PatientProgress />} />
             <Route path="pain-history" element={<PatientProgress />} />
-            <Route path="messages" element={<PatientDashboard />} />
-            <Route path="profile" element={<PatientDashboard />} />
-            <Route path="settings" element={<PatientDashboard />} />
+            <Route path="history" element={<PatientProgress />} />
+            <Route path="messages" element={<PatientMessages />} />
+            <Route path="profile" element={<PatientProfile />} />
+            <Route path="settings" element={<PatientSettings />} />
           </Route>
         </Route>
 

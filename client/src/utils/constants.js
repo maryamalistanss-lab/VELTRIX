@@ -25,6 +25,12 @@ export const ROUTES = {
     PAIN_FEEDBACK: '/patient/exercises/:exerciseId/feedback',
     SESSION_SUMMARY: '/patient/exercises/:exerciseId/summary',
     PROGRESS: '/patient/progress',
+    SESSIONS: '/patient/sessions',
+    PAIN_HISTORY: '/patient/pain-history',
+    HISTORY: '/patient/history',
+    MESSAGES: '/patient/messages',
+    PROFILE: '/patient/profile',
+    SETTINGS: '/patient/settings',
   },
   THERAPIST: {
     ROOT: '/therapist',

@@ -383,23 +383,37 @@ export default function TherapistExerciseDetails() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 18 }}>🎥</span>
+                <span style={{ fontSize: 18 }}>🖼️</span>
                 <strong style={{ color: 'var(--text-primary)', fontSize: 14 }}>Demonstration Media:</strong>
               </div>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
-                {exercise.demonstrationMedia ? (
-                  <a
-                    href={exercise.demonstrationMedia}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: 'var(--primary-indigo)', fontWeight: 600, textDecoration: 'underline' }}
-                  >
-                    {exercise.demonstrationMedia}
-                  </a>
-                ) : (
-                  'Standard in-clinic motion demonstration provided during guided mode.'
-                )}
-              </p>
+              {exercise.demonstrationMedia || exercise.demonstration ? (
+                <div style={{ marginTop: 8, borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                  {((exercise.demonstrationMedia || exercise.demonstration || '').match(/\.(mp4|webm|ogg)$/i)) ? (
+                    <video
+                      src={exercise.demonstrationMedia || exercise.demonstration}
+                      controls
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+                    />
+                  ) : (
+                    <img
+                      src={exercise.demonstrationMedia || exercise.demonstration}
+                      alt={`${exercise.name || 'Exercise'} demonstration`}
+                      style={{ width: '100%', maxHeight: 240, objectFit: 'contain', borderRadius: 'var(--radius-sm)', background: '#0F172A' }}
+                    />
+                  )}
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6, wordBreak: 'break-all' }}>
+                    Reference Path: <code>{exercise.demonstrationMedia || exercise.demonstration}</code>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+                  Standard in-clinic motion demonstration provided during guided mode.
+                </p>
+              )}
             </div>
           </div>
         </Card>

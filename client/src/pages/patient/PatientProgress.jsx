@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Card from '../../components/Card';
 import CircularProgress from '../../components/common/CircularProgress';
 import SimpleLineChart from '../../components/common/SimpleLineChart';
@@ -12,12 +12,30 @@ import { ROUTES } from '../../utils/constants';
  * Real patient progress tracking and session history using authenticated patient session logs.
  */
 export default function PatientProgress() {
+  const location = useLocation();
+
+  const getInitialTab = () => {
+    const path = location.pathname.toLowerCase();
+    if (path.includes('pain')) return 'pain';
+    if (path.includes('history')) return 'history';
+    if (path.includes('sessions')) return 'overview';
+    return 'overview';
+  };
+
   const [sessions, setSessions] = useState([]);
   const [exercisesMap, setExercisesMap] = useState({});
   const [totalCatalogCount, setTotalCatalogCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview'); // overview | exercises | pain | history
+  const [activeTab, setActiveTab] = useState(getInitialTab);
+
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+    if (path.includes('pain')) setActiveTab('pain');
+    else if (path.includes('history')) setActiveTab('history');
+    else if (path.includes('sessions')) setActiveTab('overview');
+    else if (path.includes('progress')) setActiveTab('overview');
+  }, [location.pathname]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
